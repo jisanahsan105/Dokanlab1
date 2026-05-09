@@ -170,6 +170,8 @@ function SettingsPage() {
       footer_terms_url: form.footer_terms_url, footer_warranty_url: form.footer_warranty_url,
       footer_playstore_url: form.footer_playstore_url, footer_appstore_url: form.footer_appstore_url,
       footer_copyright: form.footer_copyright,
+      delivery_inside_dhaka: Number(form.delivery_inside_dhaka ?? 0),
+      delivery_outside_dhaka: Number(form.delivery_outside_dhaka ?? 0),
     }).eq("id", form.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -194,6 +196,28 @@ function SettingsPage() {
       </div>
 
       {/* Banner */}
+      {/* Delivery charges */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
+        <div>
+          <Label className="text-base">Delivery charges</Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Shown on the product page and used in the checkout area dropdown.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>ঢাকার ভিতরে (Inside Dhaka) ৳</Label>
+            <Input type="number" min={0} value={form.delivery_inside_dhaka ?? 0}
+              onChange={(e) => setForm({ ...form, delivery_inside_dhaka: e.target.value })} />
+          </div>
+          <div>
+            <Label>ঢাকার বাহিরে (Outside Dhaka) ৳</Label>
+            <Input type="number" min={0} value={form.delivery_outside_dhaka ?? 0}
+              onChange={(e) => setForm({ ...form, delivery_outside_dhaka: e.target.value })} />
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <div>

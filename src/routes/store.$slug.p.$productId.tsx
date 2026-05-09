@@ -152,8 +152,8 @@ function ProductPage() {
 
             {/* Delivery rows */}
             <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 text-sm">
-              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-medium">৬০ টাকা</span></div>
-              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-medium">১০০ টাকা</span></div>
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-medium">{Number(store.delivery_inside_dhaka ?? 60)} টাকা</span></div>
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-medium">{Number(store.delivery_outside_dhaka ?? 100)} টাকা</span></div>
             </div>
           </div>
         </div>
@@ -183,7 +183,6 @@ function ProductPage() {
       {/* Order modal */}
       <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t.checkout} <span className="text-xs font-normal text-slate-500">({t.cod})</span></DialogTitle></DialogHeader>
           <OrderForm store={store} product={product} qty={qty} setQty={setQty} t={t}
             onDone={() => setOrderOpen(false)} />
         </DialogContent>
@@ -199,17 +198,25 @@ function OrderForm({ store, product, qty, setQty, t, onDone }:
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [notes, setNotes] = useState("");
+  const [area, setArea] = useState<"inside" | "outside">("outside");
+  const [accepted, setAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const total = Number(product.price) * qty;
+  const insideCharge = Number(store.delivery_inside_dhaka ?? 60);
+  const outsideCharge = Number(store.delivery_outside_dhaka ?? 100);
+  const deliveryCharge = area === "inside" ? insideCharge : outsideCharge;
+  const subtotal = Number(product.price) * qty;
+  const total = subtotal + deliveryCharge;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!accepted) return toast.error("Please accept Terms & Conditions");
     setSubmitting(true);
     const { error } = await supabase.from("orders").insert({
       store_id: store.id, product_id: product.id, product_title: product.title,
       quantity: qty, unit_price: product.price, total,
-      customer_name: name, customer_phone: phone, customer_address: address, notes,
+      customer_name: name, customer_phone: phone, customer_address: address,
+      delivery_area: area === "inside" ? "ঢাকার ভিতরে" : "ঢাকার বাহিরে",
+      delivery_charge: deliveryCharge,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
@@ -218,18 +225,51 @@ function OrderForm({ store, product, qty, setQty, t, onDone }:
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div><Label>{t.qty}</Label><Input type="number" min={1} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} /></div>
-        <div><Label>{t.total}</Label><Input value={`৳${total.toFixed(2)}`} readOnly /></div>
+    <form onSubmit={submit} className="space-y-4">
+      <div className="rounded border-2 border-dashed border-emerald-400 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-800">
+        অর্ডারটি কনফার্ম করতে আপনার নাম, ঠিকানা, মোবাইল নাম্বার, লিখে{" "}
+        <span className="text-rose-600">অর্ডার কনফার্ম করুন</span> বাটনে ক্লিক করুন
       </div>
-      <div><Label>{t.name}</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
-      <div><Label>{t.phone}</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} required /></div>
-      <div><Label>{t.address}</Label><Textarea value={address} onChange={(e) => setAddress(e.target.value)} required /></div>
-      <div><Label>{t.notes}</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
-      <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-        {submitting ? "…" : t.placeOrder}
-      </Button>
+
+      <div>
+        <Label className="text-sm font-semibold">আপনার নাম</Label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="আপনার নাম লিখুন" required />
+      </div>
+      <div>
+        <Label className="text-sm font-semibold">আপনার মোবাইল নম্বর</Label>
+        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="আপনার মোবাইল নম্বর লিখুন" required />
+      </div>
+      <div>
+        <Label className="text-sm font-semibold">আপনার সম্পূর্ণ ঠিকানা</Label>
+        <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="আপনার ঠিকানা সম্পূর্ণ লিখুন" required />
+      </div>
+      <div>
+        <Label className="text-sm font-semibold text-sky-700">Select Area</Label>
+        <select
+          value={area}
+          onChange={(e) => setArea(e.target.value as "inside" | "outside")}
+          className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="inside">ঢাকার ভিতরে (৳ {insideCharge})</option>
+          <option value="outside">ঢাকার বাহিরে (৳ {outsideCharge})</option>
+        </select>
+      </div>
+
+      <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+        <div className="flex justify-between"><span>সাবটোটাল</span><span>৳ {subtotal.toLocaleString()}</span></div>
+        <div className="flex justify-between"><span>ডেলিভারি চার্জ</span><span>৳ {deliveryCharge.toLocaleString()}</span></div>
+        <div className="mt-1 flex justify-between border-t pt-1 font-bold"><span>মোট</span><span>৳ {total.toLocaleString()}</span></div>
+      </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="h-4 w-4" />
+        <span>I accepted <a href={store.footer_terms_url || "#"} target="_blank" rel="noreferrer" className="font-semibold text-amber-600">Terms &amp; Conditions</a></span>
+      </label>
+
+      <button type="submit" disabled={submitting}
+        className="w-full rounded bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow hover:bg-slate-800 disabled:opacity-60">
+        {submitting ? "…" : "অর্ডার কনফার্ম করুন"}
+      </button>
     </form>
   );
 }
