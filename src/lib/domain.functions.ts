@@ -33,13 +33,19 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       } as const;
     }
 
-    // Check A record points to Lovable
-    const a = await doh(domain, "A");
-    const aOk = a.some((rec) => rec.data === LOVABLE_IP);
+    // Check A record on the domain itself, OR on the apex if user provided www.
+    const targets = domain.startsWith("www.") ? [domain, domain.slice(4)] : [domain];
+    let lastSeen: string[] = [];
+    let aOk = false;
+    for (const t of targets) {
+      const a = await doh(t, "A");
+      lastSeen = a.map((r) => r.data);
+      if (lastSeen.includes(LOVABLE_IP)) { aOk = true; break; }
+    }
     if (!aOk) {
       return {
         ok: false,
-        error: `A record for ${domain} must point to ${LOVABLE_IP}. Current: ${a.map((r) => r.data).join(", ") || "none"}`,
+        error: `A record for ${domain} must point to ${LOVABLE_IP}. Current: ${lastSeen.join(", ") || "none"}`,
       } as const;
     }
 
