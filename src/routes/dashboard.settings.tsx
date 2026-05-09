@@ -23,6 +23,7 @@ function SettingsPage() {
   const [domainInput, setDomainInput] = useState("");
   const [verifying, setVerifying] = useState(false);
   const verifiedHealthCheckKey = useRef<string | null>(null);
+  const [checks, setChecks] = useState<Array<{ key: string; status: "success" | "warning" | "error"; found: string; message: string; checkedAt: string }>>([]);
   const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
@@ -97,6 +98,7 @@ function SettingsPage() {
     const checkedAt = new Date().toISOString();
     try {
       const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
+      if ((res as any).checks) setChecks((res as any).checks);
       if (!res.ok) {
         await supabase.from("stores").update({
           domain_verified: false, domain_last_checked_at: checkedAt, domain_last_check_error: res.error,
@@ -131,6 +133,31 @@ function SettingsPage() {
   };
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
+
+  const apexHost = form?.custom_domain ?? "";
+  const wwwHost = apexHost ? `www.${apexHost}` : "";
+  const findCheck = (key: string) => checks.find((c) => c.key === key);
+  const RecordStatus = ({ check }: { check?: { status: "success" | "warning" | "error"; found: string; message: string } }) => {
+    if (!check) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <XCircle className="h-3 w-3" /> Pending
+        </span>
+      );
+    }
+    if (check.status === "success") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+          <CheckCircle2 className="h-3 w-3" /> Verified
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700" title={check.message}>
+        <XCircle className="h-3 w-3" /> Pending
+      </span>
+    );
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
