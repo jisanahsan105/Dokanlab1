@@ -56,10 +56,7 @@ function Storefront() {
     document.head.appendChild(l);
   }, []);
 
-  if (notFound) return <div className="grid min-h-screen place-items-center text-muted-foreground">Store not found.</div>;
-  if (!store) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
-
-  const isDigital = store.theme === "digital";
+  const isDigital = store?.theme === "digital";
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -92,6 +89,9 @@ function Storefront() {
   }, [products]);
 
   const newArrivals = products.slice(0, 8);
+
+  if (notFound) return <div className="grid min-h-screen place-items-center text-muted-foreground">Store not found.</div>;
+  if (!store) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
 
   // Theme palette via scoped CSS vars
   const themeStyle: React.CSSProperties = isDigital
