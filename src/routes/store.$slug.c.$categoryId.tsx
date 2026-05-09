@@ -82,7 +82,7 @@ function CatProductCard({ p, slug, primary }: { p: any; slug: string; primary: s
   return (
     <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}
       className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} className="block">
+      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent" className="block">
         <div className="overflow-hidden bg-white p-2">
           {p.image_url
             ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-contain transition duration-500 hover:scale-105" />
@@ -100,11 +100,11 @@ function CatProductCard({ p, slug, primary }: { p: any; slug: string; primary: s
       </Link>
       {/* Action buttons stacked, full width, no gaps */}
       <div className="flex flex-col">
-        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
           className="flex h-9 items-center justify-center gap-1.5 bg-slate-800 text-xs font-semibold text-white hover:bg-slate-900">
           <ShoppingCart className="h-3.5 w-3.5" /> অর্ডার করুন
         </Link>
-        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
           className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-white hover:opacity-90"
           style={{ background: "#F59E0B" }}>
           <ShoppingCart className="h-3.5 w-3.5" /> Add to Cart

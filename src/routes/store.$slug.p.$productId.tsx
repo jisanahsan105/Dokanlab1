@@ -28,12 +28,15 @@ function ProductPage() {
     (async () => {
       const { data: s } = await supabase.from("stores").select("*").eq("slug", slug).maybeSingle();
       setStore(s);
-      const { data: p } = await supabase.from("products").select("*").eq("id", productId).maybeSingle();
-      setProduct(p);
       if (s) {
+        const { data: p } = await supabase.from("products").select("*")
+          .eq("store_id", s.id).eq("id", productId).eq("active", true).maybeSingle();
+        setProduct(p);
         const { count } = await supabase.from("orders").select("id", { count: "exact", head: true })
           .eq("store_id", s.id).eq("product_id", productId);
         setSalesCount(count ?? 0);
+      } else {
+        setProduct(null);
       }
     })();
   }, [slug, productId]);

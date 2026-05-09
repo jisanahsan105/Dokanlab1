@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,16 @@ type DbCategory = { id: string; name: string; image_url: string | null; active: 
 
 function Storefront() {
   const { slug } = Route.useParams();
+  const location = useLocation();
+
+  if (location.pathname !== `/store/${slug}` && location.pathname !== `/store/${slug}/`) {
+    return <Outlet />;
+  }
+
+  return <StoreHome slug={slug} />;
+}
+
+function StoreHome({ slug }: { slug: string }) {
   const navigate = useNavigate();
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -267,11 +277,13 @@ function Storefront() {
               {newArrivals.slice(0, 4).map((p, i) => (
                 <motion.div key={p.id}
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.1 }}
-                  className="overflow-hidden rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/20"
                   style={{ transform: i % 2 === 0 ? "translateY(20px)" : "translateY(-10px)" }}>
-                  {p.image_url
-                    ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-cover" />
-                    : <div className="grid aspect-square place-items-center text-white/60">{isDigital ? <Download /> : <Package />}</div>}
+                  <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
+                    className="block overflow-hidden rounded-2xl bg-white/10 backdrop-blur ring-1 ring-white/20">
+                    {p.image_url
+                      ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-cover transition duration-500 hover:scale-105" />
+                      : <div className="grid aspect-square place-items-center text-white/60">{isDigital ? <Download /> : <Package />}</div>}
+                  </Link>
                 </motion.div>
               ))}
             </div>
@@ -432,7 +444,7 @@ function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; s
   const inStock = p.active;
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
         className="group block overflow-hidden rounded-2xl transition"
         style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", boxShadow: "0 4px 20px -8px rgba(0,0,0,0.12)" }}>
         <div className="relative overflow-hidden">
@@ -460,17 +472,17 @@ function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; s
               <span className={`font-extrabold ${compact ? "text-base" : "text-lg"}`} style={{ color: "var(--sf-primary)" }}>৳{p.price}</span>
             </div>
             {!compact && (
-              <Button size="sm" className="h-8 rounded-full px-3 text-xs font-semibold text-white"
+              <span className="inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white"
                 style={{ background: "var(--sf-primary)" }}>
                 {isDigital ? <><Download className="h-3 w-3" /> {t.downloadNow}</> : <><ShoppingBag className="h-3 w-3" /> {t.buyNow}</>}
-              </Button>
+              </span>
             )}
           </div>
           {compact && (
-            <Button size="sm" className="mt-2 h-7 w-full rounded-md px-2 text-[11px] font-semibold text-white"
+            <span className="mt-2 inline-flex h-7 w-full items-center justify-center gap-1.5 rounded-md px-2 text-[11px] font-semibold text-white"
               style={{ background: "var(--sf-primary)" }}>
               <ShoppingBag className="h-3 w-3" /> {t.buyNow}
-            </Button>
+            </span>
           )}
         </div>
       </Link>
@@ -493,7 +505,7 @@ function DigitalCard({ p, slug, t }: { p: Product; slug: string; t: any }) {
   const ft = fileTypeOf(p);
   return (
     <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
         className="flex items-center gap-4 rounded-2xl p-4 transition group"
         style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl text-white"
