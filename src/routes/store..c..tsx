@@ -2,11 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
-import { ArrowLeft, ShoppingBag, Package, ChevronRight } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Package, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/store/c/")({ component: CategoryPage });
+export const Route = createFileRoute("/store/$slug/c/$categoryId")({ component: CategoryPage });
 
 function CategoryPage() {
   const { slug, categoryId } = Route.useParams();
@@ -32,15 +31,14 @@ function CategoryPage() {
     })();
   }, [slug, categoryId]);
 
-  if (loading) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
-  if (!store || !cat) return <div className="grid min-h-screen place-items-center text-muted-foreground">Category not found.</div>;
+  if (loading) return <div className="grid min-h-screen place-items-center text-slate-500">Loading…</div>;
+  if (!store || !cat) return <div className="grid min-h-screen place-items-center text-slate-500">Category not found.</div>;
 
   const isDigital = store.theme === "digital";
   const primary = isDigital ? "#6366F1" : "#059669";
-  const accent = isDigital ? "#22D3EE" : "#F59E0B";
 
   return (
-    <div className="min-h-screen" style={{ background: "#F8FAFC", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
       <header className="sticky top-0 z-30 border-b bg-white shadow-sm">
         <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
           <Link to="/store/$slug" params={{ slug }} className="flex items-center gap-2">
@@ -55,30 +53,20 @@ function CategoryPage() {
         </div>
       </header>
 
-      {/* Breadcrumb / banner */}
-      <div className="text-white" style={{ background: `linear-gradient(135deg, ${primary}, ${primary})` }}>
-        <div className="container mx-auto px-4 py-8">
-          <nav className="text-xs opacity-80">
-            <Link to="/store/$slug" params={{ slug }} className="hover:underline">Home</Link>
-            <ChevronRight className="mx-1 inline h-3 w-3" />
-            <span>{cat.name}</span>
-          </nav>
-          <div className="mt-2 flex items-center gap-4">
-            {cat.image_url && <img src={cat.image_url} alt={cat.name} className="h-16 w-16 rounded-xl object-cover ring-2 ring-white/30" />}
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">{cat.name}</h1>
-              <p className="mt-1 text-sm opacity-90">{products.length} products</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <main className="container mx-auto px-4 py-6">
+        <nav className="mb-3 text-xs text-slate-500">
+          <Link to="/store/$slug" params={{ slug }} className="hover:underline">Home</Link>
+          <ChevronRight className="mx-1 inline h-3 w-3" />
+          <span className="text-slate-700">{cat.name}</span>
+        </nav>
 
-      <main className="container mx-auto px-4 py-8">
+        <h1 className="mb-4 text-xl font-bold text-slate-900 md:text-2xl">{cat.name}</h1>
+
         {products.length === 0 ? (
-          <div className="rounded-2xl border border-dashed py-20 text-center text-muted-foreground">No products in this category yet.</div>
+          <div className="rounded-2xl border border-dashed bg-white py-20 text-center text-slate-500">No products in this category yet.</div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {products.map(p => <CatProductCard key={p.id} p={p} slug={slug} primary={primary} accent={accent} />)}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {products.map(p => <CatProductCard key={p.id} p={p} slug={slug} primary={primary} />)}
           </div>
         )}
       </main>
@@ -88,31 +76,40 @@ function CategoryPage() {
   );
 }
 
-function CatProductCard({ p, slug, primary, accent }: { p: any; slug: string; primary: string; accent: string }) {
+function CatProductCard({ p, slug, primary }: { p: any; slug: string; primary: string }) {
+  const original = (p as any).original_price ?? null;
+  const hasOriginal = original && Number(original) > Number(p.price);
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
-        className="group block overflow-hidden rounded-xl border bg-white shadow-sm transition hover:shadow-lg">
-        <div className="overflow-hidden bg-slate-50">
+    <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}
+      className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} className="block">
+        <div className="overflow-hidden bg-white p-2">
           {p.image_url
-            ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-110" />
+            ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-contain transition duration-500 hover:scale-105" />
             : <div className="grid aspect-square place-items-center text-slate-300"><Package className="h-10 w-10" /></div>}
         </div>
-        <div className="p-3">
-          <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-tight" style={{ color: primary }}>{p.title}</h3>
-          <div className="mt-2 text-base font-extrabold text-slate-900">৳{Number(p.price).toLocaleString()}</div>
-        </div>
-        <div className="grid grid-cols-1">
-          <Button size="sm" className="h-9 w-full rounded-none text-xs font-semibold text-white"
-            style={{ background: "#1f2937" }}>
-            🛒 অর্ডার করুন
-          </Button>
-          <Button size="sm" className="h-9 w-full rounded-none text-xs font-semibold text-white"
-            style={{ background: accent }}>
-            <ShoppingBag className="h-3 w-3" /> Add to Cart
-          </Button>
+        <div className="px-3 pb-2">
+          <h3 className="line-clamp-1 text-sm font-medium leading-tight hover:underline" style={{ color: primary }}>{p.title}</h3>
+          <div className="mt-2 flex items-baseline gap-2 text-sm">
+            {hasOriginal && (
+              <span className="text-slate-400 line-through">৳ {Number(original).toLocaleString()}</span>
+            )}
+            <span className="font-bold text-slate-900">৳ {Number(p.price).toLocaleString()}</span>
+          </div>
         </div>
       </Link>
+      {/* Action buttons stacked, full width, no gaps */}
+      <div className="flex flex-col">
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+          className="flex h-9 items-center justify-center gap-1.5 bg-slate-800 text-xs font-semibold text-white hover:bg-slate-900">
+          <ShoppingCart className="h-3.5 w-3.5" /> অর্ডার করুন
+        </Link>
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+          className="flex h-9 items-center justify-center gap-1.5 text-xs font-semibold text-white hover:opacity-90"
+          style={{ background: "#F59E0B" }}>
+          <ShoppingCart className="h-3.5 w-3.5" /> Add to Cart
+        </Link>
+      </div>
     </motion.div>
   );
 }
