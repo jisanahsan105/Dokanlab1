@@ -29,11 +29,11 @@ function SettingsPage() {
     const { error: upErr } = await supabase.storage.from("store-assets").upload(path, file, { upsert: true });
     if (upErr) { toast.error(upErr.message); setBusy(false); return; }
     const { data } = supabase.storage.from("store-assets").getPublicUrl(path);
-    const field = kind === "logo" ? "logo_url" : "banner_url";
-    const next = { ...form, [field]: data.publicUrl };
-    setForm(next);
+    const url = data.publicUrl;
+    const patch: any = kind === "logo" ? { logo_url: url } : { banner_url: url };
+    setForm({ ...form, ...patch });
     // Persist immediately so it survives even if the user forgets to click Save
-    const { error: saveErr } = await supabase.from("stores").update({ [field]: data.publicUrl }).eq("id", form.id);
+    const { error: saveErr } = await supabase.from("stores").update(patch).eq("id", form.id);
     if (saveErr) toast.error(saveErr.message);
     else { toast.success(`${kind === "logo" ? "Logo" : "Banner"} updated`); reload(); }
     setBusy(false);
