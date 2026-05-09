@@ -152,8 +152,8 @@ function ProductPage() {
 
             {/* Delivery rows */}
             <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 text-sm">
-              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-medium">৬০ টাকা</span></div>
-              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-medium">১০০ টাকা</span></div>
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-medium">{Number(store.delivery_inside_dhaka ?? 60)} টাকা</span></div>
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-medium">{Number(store.delivery_outside_dhaka ?? 100)} টাকা</span></div>
             </div>
           </div>
         </div>
