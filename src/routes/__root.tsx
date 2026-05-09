@@ -77,10 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "DokanLab — F-commerce stores for Bangladesh" },
       { name: "description", content: "Launch your own online store in minutes. Built for F-commerce merchants in Bangladesh." },
       { property: "og:title", content: "DokanLab — F-commerce stores for Bangladesh" },
-      { property: "og:description", content: "Launch your own online store in minutes." },
+      { property: "og:description", content: "Launch your own online store in minutes. Built for F-commerce merchants in Bangladesh." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "DokanLab — F-commerce stores for Bangladesh" },
+      { name: "twitter:description", content: "Launch your own online store in minutes. Built for F-commerce merchants in Bangladesh." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05d4bf9a-40d6-44e4-bad1-eb14791555e8/id-preview-0f0744f2--e77e85f2-0f57-4b62-afaf-a55cc6451191.lovable.app-1778364598454.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/05d4bf9a-40d6-44e4-bad1-eb14791555e8/id-preview-0f0744f2--e77e85f2-0f57-4b62-afaf-a55cc6451191.lovable.app-1778364598454.png" },
     ],
     links: [
       {
