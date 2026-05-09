@@ -186,6 +186,8 @@ export type Database = {
           created_at: string
           currency: string
           custom_domain: string | null
+          domain_last_check_error: string | null
+          domain_last_checked_at: string | null
           domain_verification_token: string | null
           domain_verified: boolean
           footer_about_url: string | null
@@ -214,6 +216,8 @@ export type Database = {
           created_at?: string
           currency?: string
           custom_domain?: string | null
+          domain_last_check_error?: string | null
+          domain_last_checked_at?: string | null
           domain_verification_token?: string | null
           domain_verified?: boolean
           footer_about_url?: string | null
@@ -242,6 +246,8 @@ export type Database = {
           created_at?: string
           currency?: string
           custom_domain?: string | null
+          domain_last_check_error?: string | null
+          domain_last_checked_at?: string | null
           domain_verification_token?: string | null
           domain_verified?: boolean
           footer_about_url?: string | null
