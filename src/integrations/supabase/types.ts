@@ -50,6 +50,8 @@ export type Database = {
           customer_address: string
           customer_name: string
           customer_phone: string
+          delivery_area: string | null
+          delivery_charge: number
           id: string
           notes: string | null
           product_id: string | null
@@ -65,6 +67,8 @@ export type Database = {
           customer_address: string
           customer_name: string
           customer_phone: string
+          delivery_area?: string | null
+          delivery_charge?: number
           id?: string
           notes?: string | null
           product_id?: string | null
@@ -80,6 +84,8 @@ export type Database = {
           customer_address?: string
           customer_name?: string
           customer_phone?: string
+          delivery_area?: string | null
+          delivery_charge?: number
           id?: string
           notes?: string | null
           product_id?: string | null
@@ -186,6 +192,8 @@ export type Database = {
           created_at: string
           currency: string
           custom_domain: string | null
+          delivery_inside_dhaka: number
+          delivery_outside_dhaka: number
           domain_last_check_error: string | null
           domain_last_checked_at: string | null
           domain_verification_token: string | null
@@ -216,6 +224,8 @@ export type Database = {
           created_at?: string
           currency?: string
           custom_domain?: string | null
+          delivery_inside_dhaka?: number
+          delivery_outside_dhaka?: number
           domain_last_check_error?: string | null
           domain_last_checked_at?: string | null
           domain_verification_token?: string | null
@@ -246,6 +256,8 @@ export type Database = {
           created_at?: string
           currency?: string
           custom_domain?: string | null
+          delivery_inside_dhaka?: number
+          delivery_outside_dhaka?: number
           domain_last_check_error?: string | null
           domain_last_checked_at?: string | null
           domain_verification_token?: string | null
