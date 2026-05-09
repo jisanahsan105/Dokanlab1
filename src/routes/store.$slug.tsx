@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,16 @@ type DbCategory = { id: string; name: string; image_url: string | null; active: 
 
 function Storefront() {
   const { slug } = Route.useParams();
+  const location = useLocation();
+
+  if (location.pathname !== `/store/${slug}` && location.pathname !== `/store/${slug}/`) {
+    return <Outlet />;
+  }
+
+  return <StoreHome slug={slug} />;
+}
+
+function StoreHome({ slug }: { slug: string }) {
   const navigate = useNavigate();
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
