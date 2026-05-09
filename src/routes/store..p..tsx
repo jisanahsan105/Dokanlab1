@@ -12,7 +12,7 @@ import { T, type Lang } from "@/lib/i18n";
 import { toast } from "sonner";
 import { ArrowLeft, Phone, Package } from "lucide-react";
 
-export const Route = createFileRoute("/store/$slug/p/$productId")({ component: ProductPage });
+export const Route = createFileRoute("/store/p/")({ component: ProductPage });
 
 function ProductPage() {
   const { slug, productId } = Route.useParams();
