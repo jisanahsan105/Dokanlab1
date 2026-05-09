@@ -283,6 +283,12 @@ function SettingsPage() {
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
                       <tr>
+                        <td className="p-2 font-mono">A</td>
+                        <td className="p-2 font-mono">www</td>
+                        <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
+                      </tr>
+                      <tr>
                         <td className="p-2 font-mono">TXT</td>
                         <td className="p-2 font-mono">_lovable-verify</td>
                         <td className="p-2 font-mono break-all">{form.domain_verification_token}</td>
