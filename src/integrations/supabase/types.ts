@@ -152,6 +152,16 @@ export type Database = {
           bio: string | null
           created_at: string
           currency: string
+          footer_about_url: string | null
+          footer_address: string | null
+          footer_appstore_url: string | null
+          footer_copyright: string | null
+          footer_email: string | null
+          footer_facebook_url: string | null
+          footer_phone: string | null
+          footer_playstore_url: string | null
+          footer_terms_url: string | null
+          footer_warranty_url: string | null
           id: string
           logo_url: string | null
           name: string
@@ -167,6 +177,16 @@ export type Database = {
           bio?: string | null
           created_at?: string
           currency?: string
+          footer_about_url?: string | null
+          footer_address?: string | null
+          footer_appstore_url?: string | null
+          footer_copyright?: string | null
+          footer_email?: string | null
+          footer_facebook_url?: string | null
+          footer_phone?: string | null
+          footer_playstore_url?: string | null
+          footer_terms_url?: string | null
+          footer_warranty_url?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -182,6 +202,16 @@ export type Database = {
           bio?: string | null
           created_at?: string
           currency?: string
+          footer_about_url?: string | null
+          footer_address?: string | null
+          footer_appstore_url?: string | null
+          footer_copyright?: string | null
+          footer_email?: string | null
+          footer_facebook_url?: string | null
+          footer_phone?: string | null
+          footer_playstore_url?: string | null
+          footer_terms_url?: string | null
+          footer_warranty_url?: string | null
           id?: string
           logo_url?: string | null
           name?: string

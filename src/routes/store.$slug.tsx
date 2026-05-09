@@ -10,6 +10,7 @@ import { T, type Lang } from "@/lib/i18n";
 import {
   Search, ShoppingBag, ShoppingCart, Download, Sparkles, Flame, Star,
   ChevronRight, FileText, Package, Tag, ArrowRight,
+  MapPin, Mail, Phone, Send, Facebook,
 } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug")({ component: Storefront });
@@ -133,27 +134,33 @@ function Storefront() {
   return (
     <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }} className="min-h-screen">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: "color-mix(in oklab, var(--sf-bg) 80%, transparent)", borderBottom: "1px solid var(--sf-border)" }}>
-        <div className="container mx-auto flex items-center gap-4 px-4 py-3">
-          <Link to="/store/$slug" params={{ slug }} className="flex items-center gap-3 shrink-0">
+      <header className="sticky top-0 z-40 shadow-sm" style={{ background: "var(--sf-surface)", borderBottom: "1px solid var(--sf-border)" }}>
+        {/* Top bar: logo + search + actions */}
+        <div className="container mx-auto flex items-center gap-3 px-4 py-3 md:gap-6 md:py-4">
+          <Link to="/store/$slug" params={{ slug }} className="flex items-center gap-2 shrink-0">
             {store.logo_url
-              ? <img src={store.logo_url} alt="" className="h-10 w-10 rounded-xl object-cover ring-2" style={{ ['--tw-ring-color' as any]: "var(--sf-primary)" }} />
-              : <div className="grid h-10 w-10 place-items-center rounded-xl text-base font-bold text-white" style={{ background: "var(--sf-hero)" }}>{store.name[0]}</div>}
-            <div className="hidden sm:block">
-              <div className="text-base font-bold leading-tight">{store.name}</div>
-              {store.bio && <div className="text-xs" style={{ color: "var(--sf-muted)" }}>{store.bio}</div>}
-            </div>
+              ? <img src={store.logo_url} alt={store.name} className="h-10 w-auto max-w-[160px] object-contain md:h-12" />
+              : <>
+                  <div className="grid h-10 w-10 place-items-center rounded-lg text-base font-bold text-white md:h-12 md:w-12" style={{ background: "var(--sf-hero)" }}>
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <span className="text-xl font-extrabold tracking-tight md:text-2xl" style={{ color: "var(--sf-primary)" }}>{store.name}</span>
+                </>}
           </Link>
 
-          <div className="relative flex-1 max-w-xl">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: "var(--sf-muted)" }} />
+          <form onSubmit={(e) => e.preventDefault()} className="relative flex-1">
             <Input
               value={query} onChange={(e) => setQuery(e.target.value)}
               placeholder={t.search}
-              className="pl-9 h-10 rounded-full border-0"
-              style={{ background: "var(--sf-surface-2)", color: "var(--sf-text)" }}
+              className="h-11 rounded-md pr-28 text-sm"
+              style={{ background: "#fff", color: "#0F172A", border: "2px solid var(--sf-primary)" }}
             />
-          </div>
+            <button type="submit"
+              className="absolute right-1 top-1 inline-flex h-9 items-center gap-1.5 rounded-md px-4 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--sf-primary)" }}>
+              <Search className="h-4 w-4" /> <span className="hidden sm:inline">Search</span>
+            </button>
+          </form>
 
           <div className="hidden md:flex gap-1 rounded-full p-1" style={{ background: "var(--sf-surface-2)" }}>
             {(["en", "bn"] as Lang[]).map((l) => (
@@ -165,31 +172,29 @@ function Storefront() {
             ))}
           </div>
 
-          <button className="relative grid h-10 w-10 place-items-center rounded-full transition hover:scale-105" style={{ background: "var(--sf-surface-2)" }} aria-label={t.cart}>
+          <button className="relative grid h-11 w-11 place-items-center rounded-full transition hover:scale-105" style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }} aria-label={t.cart}>
             <ShoppingCart className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--sf-accent)" }}>0</span>
           </button>
         </div>
 
-        {/* Categories nav */}
+        {/* Colored categories strip */}
         {categories.length > 0 && (
-          <div className="container mx-auto flex items-center gap-2 overflow-x-auto px-4 pb-3 scrollbar-none">
-            <button onClick={() => setActiveCat("__all__")}
-              className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition"
-              style={activeCat === "__all__"
-                ? { background: "var(--sf-text)", color: "var(--sf-bg)" }
-                : { background: "var(--sf-surface-2)", color: "var(--sf-muted)" }}>
-              {t.all}
-            </button>
-            {categories.map(c => (
-              <button key={c} onClick={() => setActiveCat(c)}
-                className="shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold transition"
-                style={activeCat === c
-                  ? { background: "var(--sf-text)", color: "var(--sf-bg)" }
-                  : { background: "var(--sf-surface-2)", color: "var(--sf-muted)" }}>
-                {c}
+          <div style={{ background: "var(--sf-primary)" }}>
+            <div className="container mx-auto flex items-center gap-1 overflow-x-auto px-2 scrollbar-none">
+              <button onClick={() => setActiveCat("__all__")}
+                className="shrink-0 px-4 py-2.5 text-sm font-semibold text-white/95 transition hover:bg-black/15"
+                style={activeCat === "__all__" ? { background: "rgba(0,0,0,0.18)" } : undefined}>
+                {t.all}
               </button>
-            ))}
+              {categories.map(c => (
+                <button key={c} onClick={() => { setActiveCat(c); document.getElementById(`cat-${slugify(c)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                  className="shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-white/95 transition hover:bg-black/15"
+                  style={activeCat === c ? { background: "rgba(0,0,0,0.18)" } : undefined}>
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </header>
@@ -365,9 +370,7 @@ function Storefront() {
         </section>
       </main>
 
-      <footer className="mt-10 border-t py-8 text-center text-sm" style={{ borderColor: "var(--sf-border)", color: "var(--sf-muted)" }}>
-        © {new Date().getFullYear()} {store.name}
-      </footer>
+      <StoreFooter store={store} isDigital={isDigital} />
 
       <WhatsAppFab phone={store.whatsapp} message={`Hi ${store.name}!`} />
     </div>
@@ -501,5 +504,109 @@ function CatBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
         : { color: "var(--sf-text)" }}>
       {label}
     </button>
+  );
+}
+
+function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
+  // BDStall-inspired bold colored footer. Yellow for physical, deep navy for digital.
+  const palette = isDigital
+    ? { bg: "#0B1020", text: "#EEF2FF", muted: "rgba(238,242,255,0.72)", accent: "#22D3EE", divider: "rgba(255,255,255,0.12)" }
+    : { bg: "#FFC107", text: "#1A1A1A", muted: "rgba(26,26,26,0.78)", accent: "#E53935", divider: "rgba(0,0,0,0.12)" };
+
+  const links = [
+    { label: "About Us", href: store.footer_about_url },
+    { label: "Facebook Page", href: store.footer_facebook_url },
+    { label: "Terms & Condition", href: store.footer_terms_url },
+    { label: "Warranty Policy", href: store.footer_warranty_url },
+  ].filter(l => l.href);
+
+  return (
+    <footer className="mt-12" style={{ background: palette.bg, color: palette.text }}>
+      <div className="container mx-auto grid gap-10 px-4 py-12 md:grid-cols-3">
+        {/* Brand + contact */}
+        <div className="space-y-4">
+          {store.logo_url
+            ? <img src={store.logo_url} alt={store.name} className="h-12 w-auto max-w-[180px] object-contain" />
+            : <div className="text-2xl font-extrabold tracking-tight">{store.name}</div>}
+          <ul className="space-y-3 text-sm">
+            {store.footer_address && (
+              <li className="flex gap-2.5"><MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} /><span style={{ color: palette.muted }}>{store.footer_address}</span></li>
+            )}
+            {store.footer_email && (
+              <li className="flex items-center gap-2.5"><Mail className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                <a href={`mailto:${store.footer_email}`} className="hover:underline" style={{ color: palette.muted }}>{store.footer_email}</a></li>
+            )}
+            {store.footer_phone && (
+              <li className="flex items-center gap-2.5"><Phone className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                <a href={`tel:${store.footer_phone}`} className="hover:underline" style={{ color: palette.muted }}>{store.footer_phone}</a></li>
+            )}
+          </ul>
+        </div>
+
+        {/* Information links */}
+        {links.length > 0 && (
+          <div>
+            <h3 className="text-lg font-bold">Information</h3>
+            <div className="mt-1 h-0.5 w-10 rounded-full" style={{ background: palette.accent }} />
+            <ul className="mt-5 space-y-3 text-sm">
+              {links.map(l => (
+                <li key={l.label}>
+                  <a href={l.href} target="_blank" rel="noreferrer" className="transition hover:underline" style={{ color: palette.muted }}>
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Subscribe + apps */}
+        <div>
+          <h3 className="text-lg font-bold">Subscribe</h3>
+          <div className="mt-1 h-0.5 w-10 rounded-full" style={{ background: palette.accent }} />
+          <p className="mt-5 text-sm" style={{ color: palette.muted }}>Write your email to subscribe:</p>
+          <form onSubmit={(e) => e.preventDefault()} className="mt-3 flex overflow-hidden rounded-md" style={{ border: `1px solid ${palette.divider}`, background: isDigital ? "rgba(255,255,255,0.06)" : "#fff" }}>
+            <input type="email" placeholder="Your Email"
+              className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:opacity-60"
+              style={{ color: isDigital ? "#fff" : "#1A1A1A" }} />
+            <button type="submit" aria-label="Subscribe"
+              className="grid w-12 place-items-center text-white transition hover:opacity-90"
+              style={{ background: palette.accent }}><Send className="h-4 w-4" /></button>
+          </form>
+
+          {(store.footer_playstore_url || store.footer_appstore_url || store.footer_facebook_url) && (
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {store.footer_playstore_url && (
+                <a href={store.footer_playstore_url} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90">
+                  <span className="text-base">▶</span>
+                  <span><span className="block text-[9px] font-normal opacity-80">ANDROID APP ON</span>Google Play</span>
+                </a>
+              )}
+              {store.footer_appstore_url && (
+                <a href={store.footer_appstore_url} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90">
+                  <span className="text-base"></span>
+                  <span><span className="block text-[9px] font-normal opacity-80">Download on the</span>App Store</span>
+                </a>
+              )}
+              {store.footer_facebook_url && (
+                <a href={store.footer_facebook_url} target="_blank" rel="noreferrer" aria-label="Facebook"
+                  className="grid h-9 w-9 place-items-center rounded-full transition hover:scale-110"
+                  style={{ background: palette.accent, color: "#fff" }}>
+                  <Facebook className="h-4 w-4" />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t" style={{ borderColor: palette.divider }}>
+        <div className="container mx-auto px-4 py-4 text-center text-xs" style={{ color: palette.muted }}>
+          {store.footer_copyright?.trim() || `${store.name} © All rights reserved. ${new Date().getFullYear()}`}
+        </div>
+      </div>
+    </footer>
   );
 }

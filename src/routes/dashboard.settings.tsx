@@ -45,6 +45,11 @@ function SettingsPage() {
     const { error } = await supabase.from("stores").update({
       name: form.name, bio: form.bio, logo_url: form.logo_url, whatsapp: form.whatsapp, theme: form.theme,
       banner_url: form.banner_url, banner_enabled: form.banner_enabled,
+      footer_address: form.footer_address, footer_email: form.footer_email, footer_phone: form.footer_phone,
+      footer_about_url: form.footer_about_url, footer_facebook_url: form.footer_facebook_url,
+      footer_terms_url: form.footer_terms_url, footer_warranty_url: form.footer_warranty_url,
+      footer_playstore_url: form.footer_playstore_url, footer_appstore_url: form.footer_appstore_url,
+      footer_copyright: form.footer_copyright,
     }).eq("id", form.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -112,6 +117,36 @@ function SettingsPage() {
               <div className="text-xs text-muted-foreground mt-1">{t.desc}</div>
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Footer customization */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
+        <div>
+          <Label className="text-base">Storefront Footer</Label>
+          <p className="text-xs text-muted-foreground mt-1">Shown at the bottom of every storefront page. Leave any field blank to hide it.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Label>Address</Label>
+            <Textarea rows={2} value={form.footer_address ?? ""} onChange={(e) => setForm({ ...form, footer_address: e.target.value })} placeholder="143/a, Adorsho Road, Mirpur 10, Dhaka-1216" /></div>
+          <div><Label>Email</Label>
+            <Input value={form.footer_email ?? ""} onChange={(e) => setForm({ ...form, footer_email: e.target.value })} placeholder="support@yourstore.com" /></div>
+          <div><Label>Phone</Label>
+            <Input value={form.footer_phone ?? ""} onChange={(e) => setForm({ ...form, footer_phone: e.target.value })} placeholder="01XXXXXXXXX" /></div>
+          <div><Label>About Us URL</Label>
+            <Input value={form.footer_about_url ?? ""} onChange={(e) => setForm({ ...form, footer_about_url: e.target.value })} placeholder="https://…" /></div>
+          <div><Label>Facebook Page URL</Label>
+            <Input value={form.footer_facebook_url ?? ""} onChange={(e) => setForm({ ...form, footer_facebook_url: e.target.value })} placeholder="https://facebook.com/…" /></div>
+          <div><Label>Terms & Conditions URL</Label>
+            <Input value={form.footer_terms_url ?? ""} onChange={(e) => setForm({ ...form, footer_terms_url: e.target.value })} placeholder="https://…" /></div>
+          <div><Label>Warranty Policy URL</Label>
+            <Input value={form.footer_warranty_url ?? ""} onChange={(e) => setForm({ ...form, footer_warranty_url: e.target.value })} placeholder="https://…" /></div>
+          <div><Label>Google Play URL</Label>
+            <Input value={form.footer_playstore_url ?? ""} onChange={(e) => setForm({ ...form, footer_playstore_url: e.target.value })} placeholder="https://play.google.com/…" /></div>
+          <div><Label>App Store URL</Label>
+            <Input value={form.footer_appstore_url ?? ""} onChange={(e) => setForm({ ...form, footer_appstore_url: e.target.value })} placeholder="https://apps.apple.com/…" /></div>
+          <div className="sm:col-span-2"><Label>Copyright line</Label>
+            <Input value={form.footer_copyright ?? ""} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} placeholder={`${form.name ?? "Your Store"} © All rights reserved.`} /></div>
         </div>
       </div>
       <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
