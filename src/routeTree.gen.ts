@@ -18,6 +18,9 @@ import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
+import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
+import { Route as StorePRouteImport } from './routes/store..p.'
+import { Route as StoreCRouteImport } from './routes/store..c.'
 import { Route as StoreSlugPProductIdRouteImport } from './routes/store.$slug.p.$productId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -65,6 +68,21 @@ const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardCategoriesRoute = DashboardCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const StorePRoute = StorePRouteImport.update({
+  id: '/store/p/',
+  path: '/store/p/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreCRoute = StoreCRouteImport.update({
+  id: '/store/c/',
+  path: '/store/c/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StoreSlugPProductIdRoute = StoreSlugPProductIdRouteImport.update({
   id: '/p/$productId',
   path: '/p/$productId',
@@ -76,22 +94,28 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/store/c/': typeof StoreCRoute
+  '/store/p/': typeof StorePRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
+  '/store/c': typeof StoreCRoute
+  '/store/p': typeof StorePRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
 }
 export interface FileRoutesById {
@@ -100,11 +124,14 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/store/c/': typeof StoreCRoute
+  '/store/p/': typeof StorePRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
 }
 export interface FileRouteTypes {
@@ -114,22 +141,28 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/signup'
+    | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard/'
+    | '/store/c/'
+    | '/store/p/'
     | '/store/$slug/p/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/signup'
+    | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard'
+    | '/store/c'
+    | '/store/p'
     | '/store/$slug/p/$productId'
   id:
     | '__root__'
@@ -137,11 +170,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/signup'
+    | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard/'
+    | '/store/c/'
+    | '/store/p/'
     | '/store/$slug/p/$productId'
   fileRoutesById: FileRoutesById
 }
@@ -151,6 +187,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   StoreSlugRoute: typeof StoreSlugRouteWithChildren
+  StoreCRoute: typeof StoreCRoute
+  StorePRoute: typeof StorePRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -218,6 +256,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOrdersRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/categories': {
+      id: '/dashboard/categories'
+      path: '/categories'
+      fullPath: '/dashboard/categories'
+      preLoaderRoute: typeof DashboardCategoriesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/store/p/': {
+      id: '/store/p/'
+      path: '/store/p'
+      fullPath: '/store/p/'
+      preLoaderRoute: typeof StorePRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/c/': {
+      id: '/store/c/'
+      path: '/store/c'
+      fullPath: '/store/c/'
+      preLoaderRoute: typeof StoreCRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/store/$slug/p/$productId': {
       id: '/store/$slug/p/$productId'
       path: '/p/$productId'
@@ -229,6 +288,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface DashboardRouteChildren {
+  DashboardCategoriesRoute: typeof DashboardCategoriesRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProductsRoute: typeof DashboardProductsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
@@ -236,6 +296,7 @@ interface DashboardRouteChildren {
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardCategoriesRoute: DashboardCategoriesRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProductsRoute: DashboardProductsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
@@ -264,6 +325,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   StoreSlugRoute: StoreSlugRouteWithChildren,
+  StoreCRoute: StoreCRoute,
+  StorePRoute: StorePRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

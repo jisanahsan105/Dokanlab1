@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
@@ -76,10 +77,19 @@ function ProductForm({ storeId, initial, onDone }: { storeId: string; initial: a
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [price, setPrice] = useState(initial?.price ?? "");
-  const [category, setCategory] = useState(initial?.category ?? "");
+  const [categoryId, setCategoryId] = useState<string>(initial?.category_id ?? "");
+  const [cats, setCats] = useState<{ id: string; name: string }[]>([]);
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? "");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("categories").select("id,name")
+        .eq("store_id", storeId).order("position", { ascending: true });
+      setCats((data ?? []) as any);
+    })();
+  }, [storeId]);
 
   const onUpload = async (file: File) => {
     setUploading(true);
@@ -94,7 +104,11 @@ function ProductForm({ storeId, initial, onDone }: { storeId: string; initial: a
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const payload = { store_id: storeId, title, description, price: Number(price), category, image_url: imageUrl };
+    const catName = cats.find(c => c.id === categoryId)?.name ?? null;
+    const payload: any = {
+      store_id: storeId, title, description, price: Number(price),
+      category: catName, category_id: categoryId || null, image_url: imageUrl,
+    };
     const { error } = initial
       ? await supabase.from("products").update(payload).eq("id", initial.id)
       : await supabase.from("products").insert(payload);
@@ -110,7 +124,19 @@ function ProductForm({ storeId, initial, onDone }: { storeId: string; initial: a
       <div><Label>Description</Label><Textarea value={description} onChange={(e) => setDescription(e.target.value)} /></div>
       <div className="grid grid-cols-2 gap-3">
         <div><Label>Price (BDT)</Label><Input type="number" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required /></div>
-        <div><Label>Category</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} /></div>
+        <div>
+          <Label>Category</Label>
+          {cats.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2">Add a category first in the Categories page.</p>
+          ) : (
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <SelectContent>
+                {cats.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
       <div>
         <Label>Image</Label>

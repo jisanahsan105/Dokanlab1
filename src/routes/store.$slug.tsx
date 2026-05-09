@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,14 +17,18 @@ export const Route = createFileRoute("/store/$slug")({ component: Storefront });
 
 type Product = {
   id: string; title: string; description: string | null; price: number;
-  category: string | null; image_url: string | null; download_url: string | null;
+  category: string | null; category_id: string | null; image_url: string | null; download_url: string | null;
   active: boolean; created_at: string;
 };
 
+type DbCategory = { id: string; name: string; image_url: string | null; active: boolean; position: number };
+
 function Storefront() {
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const [store, setStore] = useState<any>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [dbCategories, setDbCategories] = useState<DbCategory[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
   const [lang, setLang] = useState<Lang>("en");
   const [activeCat, setActiveCat] = useState<string>("__all__");
@@ -40,6 +44,9 @@ function Storefront() {
       const { data: p } = await supabase.from("products").select("*")
         .eq("store_id", s.id).eq("active", true).order("created_at", { ascending: false });
       setProducts((p ?? []) as Product[]);
+      const { data: c } = await supabase.from("categories").select("*")
+        .eq("store_id", s.id).eq("active", true).order("position", { ascending: true });
+      setDbCategories((c ?? []) as DbCategory[]);
       const { data: o } = await supabase.from("orders").select("product_id").eq("store_id", s.id);
       const counts: Record<string, number> = {};
       (o ?? []).forEach((row: any) => { if (row.product_id) counts[row.product_id] = (counts[row.product_id] ?? 0) + 1; });
@@ -59,11 +66,25 @@ function Storefront() {
 
   const isDigital = store?.theme === "digital";
 
+  // Use managed categories if any exist; else fall back to product.category text
   const categories = useMemo(() => {
+    if (dbCategories.length > 0) return dbCategories.map(c => c.name);
     const set = new Set<string>();
     products.forEach(p => p.category && set.add(p.category));
     return Array.from(set);
-  }, [products]);
+  }, [dbCategories, products]);
+
+  const catIdByName = useMemo(() => {
+    const m: Record<string, string> = {};
+    dbCategories.forEach(c => { m[c.name] = c.id; });
+    return m;
+  }, [dbCategories]);
+
+  const goToCategory = (name: string) => {
+    const id = catIdByName[name];
+    if (id) navigate({ to: "/store/$slug/c/$categoryId", params: { slug, categoryId: id } });
+    else { setActiveCat(name); document.getElementById(`cat-${slugify(name)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  };
 
   const filtered = useMemo(() => {
     return products.filter(p => {
@@ -188,7 +209,7 @@ function Storefront() {
                 {t.all}
               </button>
               {categories.map(c => (
-                <button key={c} onClick={() => { setActiveCat(c); document.getElementById(`cat-${slugify(c)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                <button key={c} onClick={() => goToCategory(c)}
                   className="shrink-0 whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-white/95 transition hover:bg-black/15"
                   style={activeCat === c ? { background: "rgba(0,0,0,0.18)" } : undefined}>
                   {c}
@@ -265,15 +286,17 @@ function Storefront() {
           <Section icon={<Tag className="h-5 w-5" />} title={t.categories}>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {categories.map((c) => {
+                const dbCat = dbCategories.find(d => d.name === c);
                 const sample = productsByCategory[c]?.[0];
+                const img = dbCat?.image_url || sample?.image_url || null;
                 return (
-                  <button key={c} onClick={() => { setActiveCat(c); document.getElementById(`cat-${slugify(c)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                  <button key={c} onClick={() => goToCategory(c)}
                     className="group flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:-translate-y-1"
                     style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
                     <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-xl"
                       style={{ background: "var(--sf-surface-2)" }}>
-                      {sample?.image_url
-                        ? <img src={sample.image_url} alt={c} className="h-full w-full object-cover transition group-hover:scale-110" />
+                      {img
+                        ? <img src={img} alt={c} className="h-full w-full object-cover transition group-hover:scale-110" />
                         : <Package className="h-7 w-7" style={{ color: "var(--sf-muted)" }} />}
                     </div>
                     <span className="text-center text-xs font-semibold leading-tight" style={{ color: "var(--sf-primary)" }}>{c}</span>
@@ -302,7 +325,7 @@ function Storefront() {
                 <div className="mt-1 h-0.5 w-12 rounded-full" style={{ background: "var(--sf-accent)" }} />
               </div>
               {items.length > 6 && (
-                <button onClick={() => setActiveCat(cat)} className="flex items-center gap-1 text-sm font-semibold transition hover:gap-2"
+                <button onClick={() => goToCategory(cat)} className="flex items-center gap-1 text-sm font-semibold transition hover:gap-2"
                   style={{ color: "var(--sf-accent)" }}>
                   View more <ArrowRight className="h-4 w-4" />
                 </button>
