@@ -44,16 +44,16 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
 
     // Apex domains must have both apex and www pointed correctly so either URL works.
     const targets = requiredARecordHosts(domain);
+    const aErrors: string[] = [];
     for (const t of targets) {
       const a = await doh(t, "A");
       const seen = a.map((r) => r.data);
       if (!seen.includes(LOVABLE_IP)) {
-        return {
-          ok: false,
-          error: `A record for ${t} must point to ${LOVABLE_IP}. Current: ${seen.join(", ") || "none"}`,
-        } as const;
+        aErrors.push(`A record for ${t} must point to ${LOVABLE_IP}. Current: ${seen.join(", ") || "none"}`);
       }
     }
+    const apexARecordIsMissing = aErrors.some((message) => message.startsWith(`A record for ${domain} `));
+    if (apexARecordIsMissing) return { ok: false, error: aErrors.join(" ") } as const;
 
     // DNS can be correct before the hosting edge and SSL are ready; avoid showing a broken live link.
     try {
@@ -61,15 +61,17 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       if (r.status < 200 || r.status >= 400) {
         return {
           ok: false,
-          error: `DNS records are found, but HTTPS for ${domain} is not live yet. Retry in a few minutes after hosting and SSL finish setting up. Current status: ${r.status}`,
+          error: `${aErrors.join(" ")}${aErrors.length ? " " : ""}DNS records are found, but HTTPS for ${domain} is not live yet. Retry in a few minutes after hosting and SSL finish setting up. Current status: ${r.status}`,
         } as const;
       }
     } catch {
       return {
         ok: false,
-        error: `DNS records are found, but HTTPS for ${domain} is not reachable yet. Retry in a few minutes after propagation and SSL setup finish.`,
+        error: `${aErrors.join(" ")}${aErrors.length ? " " : ""}DNS records are found, but HTTPS for ${domain} is not reachable yet. Retry in a few minutes after propagation and SSL setup finish.`,
       } as const;
     }
+
+    if (aErrors.length) return { ok: false, error: aErrors.join(" ") } as const;
 
     return { ok: true, canonicalDomain: domain } as const;
   });
