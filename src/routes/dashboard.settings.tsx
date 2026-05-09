@@ -311,26 +311,36 @@ function SettingsPage() {
                 <div className="overflow-hidden rounded-lg border border-border">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2"></th></tr>
+                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2 text-left">Status</th><th className="p-2"></th></tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       <tr>
                         <td className="p-2 font-mono">A</td>
                         <td className="p-2 font-mono">@</td>
                         <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2"><RecordStatus check={findCheck(`a-${apexHost}`)} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
                       <tr>
                         <td className="p-2 font-mono">A</td>
                         <td className="p-2 font-mono">www</td>
                         <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2"><RecordStatus check={findCheck(`a-${wwwHost}`)} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
                       <tr>
                         <td className="p-2 font-mono">TXT</td>
                         <td className="p-2 font-mono">_lovable-verify</td>
                         <td className="p-2 font-mono break-all">{form.domain_verification_token}</td>
+                        <td className="p-2"><RecordStatus check={findCheck("txt-ownership")} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy(form.domain_verification_token)}><Copy className="h-3 w-3" /></Button></td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-mono">SITE</td>
+                        <td className="p-2 font-mono">{apexHost}</td>
+                        <td className="p-2 font-mono">HTTPS reachable</td>
+                        <td className="p-2"><RecordStatus check={findCheck("https-live")} /></td>
+                        <td className="p-2"></td>
                       </tr>
                     </tbody>
                   </table>
