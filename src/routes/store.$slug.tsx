@@ -9,7 +9,7 @@ import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { T, type Lang } from "@/lib/i18n";
 import {
   Search, ShoppingBag, ShoppingCart, Download, Sparkles, Flame, Star,
-  ChevronRight, FileText, Package, Tag,
+  ChevronRight, FileText, Package, Tag, ArrowRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug")({ component: Storefront });
@@ -89,6 +89,16 @@ function Storefront() {
   }, [products]);
 
   const newArrivals = products.slice(0, 8);
+
+  // Group products by category for BDStall-style category sections (physical theme)
+  const productsByCategory = useMemo(() => {
+    const groups: Record<string, Product[]> = {};
+    products.forEach(p => {
+      const c = p.category?.trim() || "Other";
+      (groups[c] ||= []).push(p);
+    });
+    return groups;
+  }, [products]);
 
   if (notFound) return <div className="grid min-h-screen place-items-center text-muted-foreground">Store not found.</div>;
   if (!store) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
@@ -184,7 +194,18 @@ function Storefront() {
         )}
       </header>
 
-      {/* Hero */}
+      {/* Custom Banner (if uploaded & enabled) */}
+      {store.banner_enabled !== false && store.banner_url && (
+        <section className="container mx-auto px-4 pt-4">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+            className="overflow-hidden rounded-2xl shadow-lg" style={{ border: "1px solid var(--sf-border)" }}>
+            <img src={store.banner_url} alt={`${store.name} banner`} className="w-full max-h-[420px] object-cover" />
+          </motion.div>
+        </section>
+      )}
+
+      {/* Hero (only if no custom banner or for digital theme) */}
+      {(!store.banner_url || store.banner_enabled === false || isDigital) && (
       <section className="relative overflow-hidden">
         <div className="absolute inset-0" style={{ background: "var(--sf-hero)" }} />
         <div className="absolute inset-0 opacity-30"
@@ -231,8 +252,33 @@ function Storefront() {
           </motion.div>
         </div>
       </section>
+      )}
 
       <main className="container mx-auto px-4 py-10 space-y-14">
+        {/* Popular Categories grid (physical theme, BDStall-style) */}
+        {!isDigital && categories.length > 0 && (
+          <Section icon={<Tag className="h-5 w-5" />} title={t.categories}>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+              {categories.map((c) => {
+                const sample = productsByCategory[c]?.[0];
+                return (
+                  <button key={c} onClick={() => { setActiveCat(c); document.getElementById(`cat-${slugify(c)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                    className="group flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:-translate-y-1"
+                    style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
+                    <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-xl"
+                      style={{ background: "var(--sf-surface-2)" }}>
+                      {sample?.image_url
+                        ? <img src={sample.image_url} alt={c} className="h-full w-full object-cover transition group-hover:scale-110" />
+                        : <Package className="h-7 w-7" style={{ color: "var(--sf-muted)" }} />}
+                    </div>
+                    <span className="text-center text-xs font-semibold leading-tight" style={{ color: "var(--sf-primary)" }}>{c}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+        )}
+
         {topSelling.length > 0 && (
           <Section icon={<Flame className="h-5 w-5" />} title={t.topSelling}>
             <Carousel>
@@ -241,7 +287,29 @@ function Storefront() {
           </Section>
         )}
 
-        {bestProducts.length > 0 && (
+        {/* Per-category product sections (BDStall-style) - physical only */}
+        {!isDigital && Object.entries(productsByCategory).map(([cat, items]) => (
+          <section key={cat} id={`cat-${slugify(cat)}`} className="rounded-2xl p-5 md:p-6"
+            style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
+            <div className="mb-5 flex items-end justify-between border-b pb-3" style={{ borderColor: "var(--sf-border)" }}>
+              <div>
+                <h2 className="text-xl font-bold tracking-tight md:text-2xl">{cat}</h2>
+                <div className="mt-1 h-0.5 w-12 rounded-full" style={{ background: "var(--sf-accent)" }} />
+              </div>
+              {items.length > 6 && (
+                <button onClick={() => setActiveCat(cat)} className="flex items-center gap-1 text-sm font-semibold transition hover:gap-2"
+                  style={{ color: "var(--sf-accent)" }}>
+                  View more <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {items.slice(0, 6).map(p => <ProductCard key={p.id} p={p} slug={slug} isDigital={false} t={t} compact />)}
+            </div>
+          </section>
+        ))}
+
+        {isDigital && bestProducts.length > 0 && (
           <Section icon={<Star className="h-5 w-5" />} title={t.bestProducts}>
             <Carousel>
               {bestProducts.map(p => <ProductCard key={p.id} p={p} slug={slug} isDigital={isDigital} t={t} ribbon={t.bestProducts} />)}
@@ -249,7 +317,7 @@ function Storefront() {
           </Section>
         )}
 
-        {newArrivals.length > 0 && (
+        {newArrivals.length > 0 && (isDigital || categories.length === 0) && (
           <Section icon={<Sparkles className="h-5 w-5" />} title={t.newArrivals}>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {newArrivals.slice(0, 4).map(p => <ProductCard key={p.id} p={p} slug={slug} isDigital={isDigital} t={t} ribbon={t.featured} />)}
@@ -330,7 +398,11 @@ function Carousel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ProductCard({ p, slug, isDigital, t, ribbon }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string }) {
+function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string; compact?: boolean }) {
   const inStock = p.active;
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
@@ -348,24 +420,32 @@ function ProductCard({ p, slug, isDigital, t, ribbon }: { p: Product; slug: stri
               style={{ background: "var(--sf-primary)" }}>{ribbon}</span>
           )}
           {!isDigital && (
-            <span className="absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold backdrop-blur"
+            <span className="absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-semibold backdrop-blur"
               style={{ background: inStock ? "rgba(16,185,129,0.95)" : "rgba(239,68,68,0.95)", color: "#fff" }}>
               {inStock ? t.inStock : t.outOfStock}
             </span>
           )}
         </div>
-        <div className="p-4">
-          {p.category && <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--sf-muted)" }}>{p.category}</div>}
-          <h3 className="font-semibold leading-tight line-clamp-1">{p.title}</h3>
-          <div className="mt-3 flex items-center justify-between">
+        <div className={compact ? "p-2.5" : "p-4"}>
+          {!compact && p.category && <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--sf-muted)" }}>{p.category}</div>}
+          <h3 className={`font-semibold leading-tight ${compact ? "text-sm line-clamp-2 min-h-[2.5rem]" : "line-clamp-1"}`}>{p.title}</h3>
+          <div className={`flex items-center justify-between ${compact ? "mt-2" : "mt-3"}`}>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-extrabold" style={{ color: "var(--sf-primary)" }}>৳{p.price}</span>
+              <span className={`font-extrabold ${compact ? "text-base" : "text-lg"}`} style={{ color: "var(--sf-primary)" }}>৳{p.price}</span>
             </div>
-            <Button size="sm" className="h-8 rounded-full px-3 text-xs font-semibold text-white"
-              style={{ background: "var(--sf-primary)" }}>
-              {isDigital ? <><Download className="h-3 w-3" /> {t.downloadNow}</> : <><ShoppingBag className="h-3 w-3" /> {t.buyNow}</>}
-            </Button>
+            {!compact && (
+              <Button size="sm" className="h-8 rounded-full px-3 text-xs font-semibold text-white"
+                style={{ background: "var(--sf-primary)" }}>
+                {isDigital ? <><Download className="h-3 w-3" /> {t.downloadNow}</> : <><ShoppingBag className="h-3 w-3" /> {t.buyNow}</>}
+              </Button>
+            )}
           </div>
+          {compact && (
+            <Button size="sm" className="mt-2 h-7 w-full rounded-md px-2 text-[11px] font-semibold text-white"
+              style={{ background: "var(--sf-primary)" }}>
+              <ShoppingBag className="h-3 w-3" /> {t.buyNow}
+            </Button>
+          )}
         </div>
       </Link>
     </motion.div>
