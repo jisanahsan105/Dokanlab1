@@ -281,7 +281,20 @@ function SettingsPage() {
                   </table>
                 </div>
                 <p className="text-xs text-muted-foreground">DNS changes can take 5 minutes to a few hours to propagate.</p>
-                <Button type="button" onClick={verify} disabled={verifying}>{verifying ? "Verifying…" : "Verify domain"}</Button>
+                <div className="flex items-center gap-3">
+                  <Button type="button" onClick={verify} disabled={verifying}>{verifying ? "Verifying…" : "Verify domain"}</Button>
+                  <span className="text-xs text-muted-foreground">Auto-checking every 30s…</span>
+                </div>
+                {form.domain_last_checked_at && (
+                  <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs">
+                    <div className="text-muted-foreground">
+                      Last check: <strong>{new Date(form.domain_last_checked_at).toLocaleTimeString()}</strong>
+                    </div>
+                    {form.domain_last_check_error && (
+                      <div className="mt-1 text-amber-700">⚠ {form.domain_last_check_error}</div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
