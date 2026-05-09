@@ -26,6 +26,16 @@ function SettingsPage() {
 
   useEffect(() => { if (store) setForm(store); }, [store]);
   useEffect(() => { if (store?.custom_domain) setDomainInput(store.custom_domain); }, [store]);
+
+  // Auto-poll every 30s while a domain is connected but not yet verified.
+  // Must run BEFORE any early return to keep hook order stable.
+  useEffect(() => {
+    if (!form?.custom_domain || form?.domain_verified) return;
+    const id = setInterval(() => { runVerify(true); }, 30000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form?.custom_domain, form?.domain_verified, form?.domain_verification_token]);
+
   if (!form) return null;
 
   const upload = async (file: File, kind: "logo" | "banner") => {
@@ -68,7 +78,7 @@ function SettingsPage() {
     reload();
   };
 
-  const runVerify = async (silent = false) => {
+  async function runVerify(silent = false) {
     if (!form.custom_domain || !form.domain_verification_token) return;
     if (!silent) setVerifying(true);
     const checkedAt = new Date().toISOString();
@@ -97,16 +107,14 @@ function SettingsPage() {
       reload();
     }
     if (!silent) setVerifying(false);
-  };
+  }
   const verify = () => runVerify(false);
-
-  // Auto-poll every 30s while a domain is connected but not yet verified
-  useEffect(() => {
-    if (!form?.custom_domain || form?.domain_verified) return;
-    const id = setInterval(() => { runVerify(true); }, 30000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form?.custom_domain, form?.domain_verified, form?.domain_verification_token]);
+  const retryVerify = async () => {
+    // Clear last error first so the UI updates immediately, then re-run verification now
+    await supabase.from("stores").update({ domain_last_check_error: null }).eq("id", form.id);
+    setForm({ ...form, domain_last_check_error: null });
+    runVerify(false);
+  };
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
 
@@ -291,7 +299,12 @@ function SettingsPage() {
                       Last check: <strong>{new Date(form.domain_last_checked_at).toLocaleTimeString()}</strong>
                     </div>
                     {form.domain_last_check_error && (
-                      <div className="mt-1 text-amber-700">⚠ {form.domain_last_check_error}</div>
+                      <>
+                        <div className="mt-1 text-amber-700">⚠ {form.domain_last_check_error}</div>
+                        <Button type="button" size="sm" variant="outline" className="mt-2" onClick={retryVerify} disabled={verifying}>
+                          {verifying ? "Retrying…" : "Retry verification"}
+                        </Button>
+                      </>
                     )}
                   </div>
                 )}
