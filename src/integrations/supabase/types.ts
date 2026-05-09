@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          position: number
+          store_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          position?: number
+          store_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          position?: number
+          store_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -81,6 +111,7 @@ export type Database = {
         Row: {
           active: boolean
           category: string | null
+          category_id: string | null
           created_at: string
           description: string | null
           download_url: string | null
@@ -93,6 +124,7 @@ export type Database = {
         Insert: {
           active?: boolean
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
           download_url?: string | null
@@ -105,6 +137,7 @@ export type Database = {
         Update: {
           active?: boolean
           category?: string | null
+          category_id?: string | null
           created_at?: string
           description?: string | null
           download_url?: string | null
