@@ -286,15 +286,17 @@ function Storefront() {
           <Section icon={<Tag className="h-5 w-5" />} title={t.categories}>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
               {categories.map((c) => {
+                const dbCat = dbCategories.find(d => d.name === c);
                 const sample = productsByCategory[c]?.[0];
+                const img = dbCat?.image_url || sample?.image_url || null;
                 return (
-                  <button key={c} onClick={() => { setActiveCat(c); document.getElementById(`cat-${slugify(c)}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                  <button key={c} onClick={() => goToCategory(c)}
                     className="group flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:-translate-y-1"
                     style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
                     <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-xl"
                       style={{ background: "var(--sf-surface-2)" }}>
-                      {sample?.image_url
-                        ? <img src={sample.image_url} alt={c} className="h-full w-full object-cover transition group-hover:scale-110" />
+                      {img
+                        ? <img src={img} alt={c} className="h-full w-full object-cover transition group-hover:scale-110" />
                         : <Package className="h-7 w-7" style={{ color: "var(--sf-muted)" }} />}
                     </div>
                     <span className="text-center text-xs font-semibold leading-tight" style={{ color: "var(--sf-primary)" }}>{c}</span>
