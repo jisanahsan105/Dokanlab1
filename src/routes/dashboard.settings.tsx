@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyDomainDns } from "@/lib/domain.functions";
+import { Copy, CheckCircle2, XCircle, Globe } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
 
@@ -17,8 +20,12 @@ function SettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [domainInput, setDomainInput] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
+  useEffect(() => { if (store?.custom_domain) setDomainInput(store.custom_domain); }, [store]);
   if (!form) return null;
 
   const upload = async (file: File, kind: "logo" | "banner") => {
@@ -38,6 +45,45 @@ function SettingsPage() {
     else { toast.success(`${kind === "logo" ? "Logo" : "Banner"} updated`); reload(); }
     setBusy(false);
   };
+
+  const connectDomain = async () => {
+    const clean = domainInput.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(clean)) return toast.error("Enter a valid domain (e.g. shop.example.com)");
+    const token = `lovable-verify=${crypto.randomUUID()}`;
+    const { error } = await supabase.from("stores").update({
+      custom_domain: clean, domain_verification_token: token, domain_verified: false,
+    }).eq("id", form.id);
+    if (error) return toast.error(error.message);
+    toast.success("Domain saved. Add the DNS records below, then click Verify.");
+    reload();
+  };
+
+  const disconnectDomain = async () => {
+    const { error } = await supabase.from("stores").update({
+      custom_domain: null, domain_verification_token: null, domain_verified: false,
+    }).eq("id", form.id);
+    if (error) return toast.error(error.message);
+    setDomainInput("");
+    toast.success("Domain disconnected");
+    reload();
+  };
+
+  const verify = async () => {
+    if (!form.custom_domain || !form.domain_verification_token) return;
+    setVerifying(true);
+    try {
+      const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
+      if (!res.ok) { toast.error(res.error); setVerifying(false); return; }
+      const { error } = await supabase.from("stores").update({ domain_verified: true }).eq("id", form.id);
+      if (error) toast.error(error.message);
+      else { toast.success("Domain verified! Your store is live on " + form.custom_domain); reload(); }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Verification failed");
+    }
+    setVerifying(false);
+  };
+
+  const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,6 +195,80 @@ function SettingsPage() {
             <Input value={form.footer_copyright ?? ""} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} placeholder={`${form.name ?? "Your Store"} © All rights reserved.`} /></div>
         </div>
       </div>
+
+      {/* Custom Domain */}
+      <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          <Label className="text-base">Custom Domain</Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Connect your own domain (e.g. <code>shop.example.com</code>). Once verified,
+          your storefront will be served at that domain, and admin login will live at
+          <code> yourdomain.com/admin</code>.
+        </p>
+
+        {!form.custom_domain ? (
+          <div className="flex gap-2">
+            <Input placeholder="shop.example.com" value={domainInput} onChange={(e) => setDomainInput(e.target.value)} />
+            <Button type="button" onClick={connectDomain}>Connect</Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{form.custom_domain}</span>
+                {form.domain_verified ? (
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3 w-3" /> Verified
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                    <XCircle className="h-3 w-3" /> Pending
+                  </span>
+                )}
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={disconnectDomain}>Disconnect</Button>
+            </div>
+
+            {!form.domain_verified && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Add these DNS records at your registrar:</p>
+                <div className="overflow-hidden rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2"></th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      <tr>
+                        <td className="p-2 font-mono">A</td>
+                        <td className="p-2 font-mono">@</td>
+                        <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-mono">TXT</td>
+                        <td className="p-2 font-mono">_lovable-verify</td>
+                        <td className="p-2 font-mono break-all">{form.domain_verification_token}</td>
+                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy(form.domain_verification_token)}><Copy className="h-3 w-3" /></Button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground">DNS changes can take 5 minutes to a few hours to propagate.</p>
+                <Button type="button" onClick={verify} disabled={verifying}>{verifying ? "Verifying…" : "Verify domain"}</Button>
+              </div>
+            )}
+
+            {form.domain_verified && (
+              <p className="text-sm text-emerald-700">
+                ✓ Live at <a className="underline" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
     </form>
   );
