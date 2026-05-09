@@ -45,6 +45,11 @@ function SettingsPage() {
     const { error } = await supabase.from("stores").update({
       name: form.name, bio: form.bio, logo_url: form.logo_url, whatsapp: form.whatsapp, theme: form.theme,
       banner_url: form.banner_url, banner_enabled: form.banner_enabled,
+      footer_address: form.footer_address, footer_email: form.footer_email, footer_phone: form.footer_phone,
+      footer_about_url: form.footer_about_url, footer_facebook_url: form.footer_facebook_url,
+      footer_terms_url: form.footer_terms_url, footer_warranty_url: form.footer_warranty_url,
+      footer_playstore_url: form.footer_playstore_url, footer_appstore_url: form.footer_appstore_url,
+      footer_copyright: form.footer_copyright,
     }).eq("id", form.id);
     setSaving(false);
     if (error) return toast.error(error.message);
