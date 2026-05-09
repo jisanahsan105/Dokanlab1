@@ -495,7 +495,7 @@ function DigitalCard({ p, slug, t }: { p: Product; slug: string; t: any }) {
   const ft = fileTypeOf(p);
   return (
     <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 300 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }}
+      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
         className="flex items-center gap-4 rounded-2xl p-4 transition group"
         style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl text-white"
