@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { ArrowLeft, ShoppingCart, Package, ChevronRight } from "lucide-react";
 
-export const Route = createFileRoute("/store/$slug/c/$categoryId")({ component: CategoryPage });
+export const Route = createFileRoute("/store/c/")({ component: CategoryPage });
 
 function CategoryPage() {
   const { slug, categoryId } = Route.useParams();

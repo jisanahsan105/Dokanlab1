@@ -10,9 +10,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { T, type Lang } from "@/lib/i18n";
 import { toast } from "sonner";
-import { ArrowLeft, Phone, Star, Plus, Minus, ShoppingCart, Package } from "lucide-react";
+import { ArrowLeft, Phone, Package } from "lucide-react";
 
-export const Route = createFileRoute("/store/p/")({ component: ProductPage });
+export const Route = createFileRoute("/store/$slug/p/$productId")({ component: ProductPage });
 
 function ProductPage() {
   const { slug, productId } = Route.useParams();
@@ -38,17 +38,18 @@ function ProductPage() {
     })();
   }, [slug, productId]);
 
-  if (!store || !product) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
+  if (!store || !product) return <div className="grid min-h-screen place-items-center text-slate-500">Loading…</div>;
 
   const isDigital = store.theme === "digital";
   const primary = isDigital ? "#6366F1" : "#059669";
-  const orderColor = "#2563EB"; // blue Order button (per screenshot)
-  const cartColor = "#F59E0B"; // orange Cart button
+  const phone = store.whatsapp || store.footer_phone;
+  const original = (product as any).original_price ?? null;
+  const hasOriginal = original && Number(original) > Number(product.price);
 
   return (
     <div className="min-h-screen bg-slate-50" style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }}>
-      {/* Top accent bar */}
-      <div className="h-1.5" style={{ background: primary }} />
+      {/* Top blue accent bar (per screenshot) */}
+      <div className="h-1.5" style={{ background: "#2563EB" }} />
 
       <header className="border-b bg-white shadow-sm">
         <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
@@ -74,112 +75,112 @@ function ProductPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* LEFT: image gallery */}
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            {product.image_url
-              ? <img src={product.image_url} alt={product.title} className="mx-auto aspect-square w-full max-w-md rounded-lg object-contain" />
-              : <div className="grid aspect-square place-items-center rounded-lg bg-slate-100 text-slate-300"><Package className="h-16 w-16" /></div>}
-            {/* Thumbnails (placeholder using same image) */}
+      <main className="container mx-auto max-w-6xl px-4 py-5">
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* LEFT: image card */}
+          <div className="rounded-md border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="overflow-hidden">
+              {product.image_url
+                ? <img src={product.image_url} alt={product.title} className="mx-auto aspect-square w-full max-w-[420px] object-contain" />
+                : <div className="grid aspect-square place-items-center bg-slate-100 text-slate-300"><Package className="h-16 w-16" /></div>}
+            </div>
             {product.image_url && (
               <div className="mt-3 flex gap-2 border-t pt-3">
-                <img src={product.image_url} alt="" className="h-14 w-14 rounded-md border object-cover ring-2 ring-offset-1" style={{ borderColor: primary }} />
+                <img src={product.image_url} alt="" className="h-12 w-12 cursor-pointer rounded border object-cover ring-1 ring-blue-400" />
               </div>
             )}
           </div>
 
-          {/* RIGHT: details */}
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
-            <h1 className="text-2xl font-bold leading-tight text-slate-900 md:text-[26px]">{product.title}</h1>
+          {/* RIGHT: details card */}
+          <div className="rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+            <h1 className="text-xl font-bold leading-snug text-slate-900 md:text-[22px]">{product.title}</h1>
 
-            <div className="mt-3 flex items-baseline gap-3">
-              <span className="text-2xl font-extrabold text-emerald-600">৳ {Number(product.price).toLocaleString()}</span>
+            <div className="mt-2 flex items-baseline gap-3 text-lg">
+              {hasOriginal && (
+                <span className="font-semibold text-slate-400 line-through">৳ {Number(original).toLocaleString()}</span>
+              )}
+              <span className="text-xl font-extrabold text-emerald-600">৳ {Number(product.price).toLocaleString()}</span>
             </div>
 
-            <div className="mt-3 flex items-center gap-1 text-sm">
-              <span className="font-semibold text-slate-700">Average Rating :</span>
-              <span className="font-bold">0 /5</span>
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+            <div className="mt-3 text-sm font-bold text-slate-800">
+              Average Rating : 0 /5
             </div>
 
-            {/* Quantity */}
-            <div className="mt-5 inline-flex items-center overflow-hidden rounded-md border">
+            {/* Quantity stepper - 3 small boxes [+][n][-] like screenshot */}
+            <div className="mt-4 inline-flex items-center gap-0 overflow-hidden rounded border border-slate-300 text-sm">
               <button onClick={() => setQty(q => q + 1)} aria-label="Increase"
-                className="grid h-9 w-9 place-items-center bg-slate-100 hover:bg-slate-200">
-                <Plus className="h-4 w-4" />
-              </button>
-              <div className="grid h-9 w-12 place-items-center font-semibold">{qty}</div>
+                className="grid h-8 w-8 place-items-center border-r border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100">+</button>
+              <div className="grid h-8 w-10 place-items-center bg-white font-semibold">{qty}</div>
               <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease"
-                className="grid h-9 w-9 place-items-center bg-slate-100 hover:bg-slate-200">
-                <Minus className="h-4 w-4" />
-              </button>
+                className="grid h-8 w-8 place-items-center border-l border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100">−</button>
             </div>
 
-            {/* Buttons row */}
-            <div className="mt-5 flex flex-wrap gap-3">
-              <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => setOrderOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md px-6 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-95"
-                style={{ background: orderColor }}>
+            {/* Order + Cart buttons (small, side by side) */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOrderOpen(true)}
+                className="rounded px-5 py-2 text-sm font-bold text-white shadow hover:opacity-95"
+                style={{ background: "#2563EB" }}>
                 অর্ডার করুন
               </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }}
-                onClick={() => setOrderOpen(true)}
-                className="inline-flex items-center gap-2 rounded-md px-6 py-2.5 text-sm font-bold text-white shadow-md hover:opacity-95"
-                style={{ background: cartColor }}>
-                <ShoppingCart className="h-4 w-4" /> কার্টে রাখুন
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOrderOpen(true)}
+                className="rounded px-5 py-2 text-sm font-bold text-white shadow hover:opacity-95"
+                style={{ background: "#F59E0B" }}>
+                কার্টে রাখুন
               </motion.button>
             </div>
 
-            {/* Call to order */}
-            {(store.whatsapp || store.footer_phone) && (
-              <a href={`tel:${store.whatsapp || store.footer_phone}`}
-                className="mt-4 flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-white"
-                style={{ background: "#475569" }}>
-                <span>কল করতে ক্লিক করুন</span>
-                <Phone className="h-4 w-4" />
-                <span>+{store.whatsapp || store.footer_phone}</span>
+            {/* Call to order — dark gray block, centered, two lines */}
+            {phone && (
+              <a href={`tel:${phone}`}
+                className="mt-5 block rounded px-4 py-3 text-center text-white hover:opacity-95"
+                style={{ background: "#4B5563" }}>
+                <div className="text-sm">কল করতে ক্লিক করুন</div>
+                <div className="mt-0.5 inline-flex items-center justify-center gap-1.5 text-sm font-semibold">
+                  <Phone className="h-3.5 w-3.5" /> +{phone}
+                </div>
               </a>
             )}
 
-            {/* Sales count */}
-            <div className="mt-4 rounded border-l-4 bg-slate-50 px-4 py-2 text-sm" style={{ borderColor: "#DC2626" }}>
+            {/* Sales count - light gray bg, red left border, red number */}
+            <div className="mt-4 border-l-4 bg-slate-100 px-4 py-2.5 text-sm" style={{ borderColor: "#DC2626" }}>
               এখন পর্যন্ত এই পণ্যটি বিক্রয় হয়েছে মোট :{" "}
               <span className="font-bold" style={{ color: "#DC2626" }}>{salesCount}</span> পিস
             </div>
 
-            {/* Delivery info */}
-            <div className="mt-3 divide-y rounded border text-sm">
-              <div className="flex justify-between px-4 py-2.5"><span>ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-semibold">৬০ টাকা</span></div>
-              <div className="flex justify-between px-4 py-2.5"><span>ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-semibold">১০০ টাকা</span></div>
+            {/* Delivery rows */}
+            <div className="mt-3 divide-y divide-slate-200 border-y border-slate-200 text-sm">
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার ভিতর ডেলিভারি চার্জ</span><span className="font-medium">৬০ টাকা</span></div>
+              <div className="flex items-center justify-between px-1 py-2.5"><span className="text-slate-700">ঢাকার বাইরের ডেলিভারি চার্জ</span><span className="font-medium">১০০ টাকা</span></div>
             </div>
           </div>
         </div>
 
-        {/* Description */}
-        <div className="mt-6 overflow-hidden rounded-xl border bg-white shadow-sm">
-          <div className="border-b px-5 py-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: primary }}>DESCRIPTION</h2>
+        {/* DESCRIPTION tab */}
+        <div className="mt-5 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+          <div className="border-b">
+            <div className="inline-block border-b-2 px-5 py-2.5 text-xs font-bold tracking-wider text-slate-700"
+              style={{ borderColor: primary }}>
+              DESCRIPTION
+            </div>
           </div>
           <div className="space-y-2 px-5 py-5 text-sm leading-relaxed text-slate-700">
             {product.description
-              ? product.description.split("\n").map((line: string, i: number) => <p key={i}>{line}</p>)
-              : <p className="text-muted-foreground">No description provided.</p>}
+              ? product.description.split("\n").filter((l: string) => l.trim()).map((line: string, i: number) => <p key={i}>{line}</p>)
+              : <p className="text-slate-400">No description provided.</p>}
           </div>
         </div>
 
-        {/* Ratings placeholder */}
-        <div className="mt-6 rounded-xl border bg-white py-10 text-center shadow-sm">
-          <h3 className="text-lg font-bold text-slate-900">Ratings & Reviews From Our Customer</h3>
-          <div className="mt-4 text-4xl font-extrabold">0 /5</div>
+        {/* Ratings */}
+        <div className="mt-5 rounded-md border border-slate-200 bg-white py-10 text-center shadow-sm">
+          <h3 className="text-base font-bold text-slate-900">Ratings &amp; Reviews From Our Customer</h3>
+          <div className="mt-4 text-3xl font-extrabold">0 /5</div>
         </div>
       </main>
 
       {/* Order modal */}
       <Dialog open={orderOpen} onOpenChange={setOrderOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{t.checkout} <span className="text-xs font-normal text-muted-foreground">({t.cod})</span></DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.checkout} <span className="text-xs font-normal text-slate-500">({t.cod})</span></DialogTitle></DialogHeader>
           <OrderForm store={store} product={product} qty={qty} setQty={setQty} t={t}
             onDone={() => setOrderOpen(false)} />
         </DialogContent>
