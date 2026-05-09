@@ -23,6 +23,7 @@ function SettingsPage() {
   const [domainInput, setDomainInput] = useState("");
   const [verifying, setVerifying] = useState(false);
   const verifiedHealthCheckKey = useRef<string | null>(null);
+  const [checks, setChecks] = useState<Array<{ key: string; status: "success" | "warning" | "error"; found: string; message: string; checkedAt: string }>>([]);
   const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
@@ -97,6 +98,7 @@ function SettingsPage() {
     const checkedAt = new Date().toISOString();
     try {
       const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
+      if ((res as any).checks) setChecks((res as any).checks);
       if (!res.ok) {
         await supabase.from("stores").update({
           domain_verified: false, domain_last_checked_at: checkedAt, domain_last_check_error: res.error,
@@ -131,6 +133,31 @@ function SettingsPage() {
   };
 
   const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
+
+  const apexHost = form?.custom_domain ?? "";
+  const wwwHost = apexHost ? `www.${apexHost}` : "";
+  const findCheck = (key: string) => checks.find((c) => c.key === key);
+  const RecordStatus = ({ check }: { check?: { status: "success" | "warning" | "error"; found: string; message: string } }) => {
+    if (!check) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <XCircle className="h-3 w-3" /> Pending
+        </span>
+      );
+    }
+    if (check.status === "success") {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+          <CheckCircle2 className="h-3 w-3" /> Verified
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700" title={check.message}>
+        <XCircle className="h-3 w-3" /> Pending
+      </span>
+    );
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,26 +311,36 @@ function SettingsPage() {
                 <div className="overflow-hidden rounded-lg border border-border">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2"></th></tr>
+                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2 text-left">Status</th><th className="p-2"></th></tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       <tr>
                         <td className="p-2 font-mono">A</td>
                         <td className="p-2 font-mono">@</td>
                         <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2"><RecordStatus check={findCheck(`a-${apexHost}`)} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
                       <tr>
                         <td className="p-2 font-mono">A</td>
                         <td className="p-2 font-mono">www</td>
                         <td className="p-2 font-mono">185.158.133.1</td>
+                        <td className="p-2"><RecordStatus check={findCheck(`a-${wwwHost}`)} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
                       <tr>
                         <td className="p-2 font-mono">TXT</td>
                         <td className="p-2 font-mono">_lovable-verify</td>
                         <td className="p-2 font-mono break-all">{form.domain_verification_token}</td>
+                        <td className="p-2"><RecordStatus check={findCheck("txt-ownership")} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy(form.domain_verification_token)}><Copy className="h-3 w-3" /></Button></td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 font-mono">SITE</td>
+                        <td className="p-2 font-mono">{apexHost}</td>
+                        <td className="p-2 font-mono">HTTPS reachable</td>
+                        <td className="p-2"><RecordStatus check={findCheck("https-live")} /></td>
+                        <td className="p-2"></td>
                       </tr>
                     </tbody>
                   </table>
