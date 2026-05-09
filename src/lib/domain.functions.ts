@@ -132,7 +132,8 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       } as const;
     }
 
-    if (aErrors.length) return { ok: false, error: aErrors.join(" "), checks } as const;
+    const missingRequiredRecords = aErrors.filter((message) => message.startsWith(`A record for ${domain} `));
+    if (missingRequiredRecords.length) return { ok: false, error: missingRequiredRecords.join(" "), checks } as const;
     if (!tokenFound) {
       return {
         ok: false,
