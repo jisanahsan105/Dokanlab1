@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyDomainDns } from "@/lib/domain.functions";
-import { Copy, CheckCircle2, XCircle, Globe } from "lucide-react";
+import { Copy, CheckCircle2, XCircle, Globe, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
 
@@ -24,6 +24,8 @@ function SettingsPage() {
   const [verifying, setVerifying] = useState(false);
   const verifiedHealthCheckKey = useRef<string | null>(null);
   const [checks, setChecks] = useState<Array<{ key: string; status: "success" | "warning" | "error"; found: string; message: string; checkedAt: string }>>([]);
+  const [siteStatus, setSiteStatus] = useState<"live" | "setting_up" | "dns_only" | null>(null);
+  const [siteMessage, setSiteMessage] = useState<string | null>(null);
   const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
@@ -32,11 +34,12 @@ function SettingsPage() {
   // Auto-poll every 30s while a domain is connected but not yet verified.
   // Must run BEFORE any early return to keep hook order stable.
   useEffect(() => {
-    if (!form?.custom_domain || form?.domain_verified) return;
+    if (!form?.custom_domain) return;
+    if (form?.domain_verified && siteStatus === "live") return;
     const id = setInterval(() => { runVerify(true); }, 30000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form?.custom_domain, form?.domain_verified, form?.domain_verification_token]);
+  }, [form?.custom_domain, form?.domain_verified, form?.domain_verification_token, siteStatus]);
 
   // Re-check previously verified domains once when Settings opens, so broken DNS is not shown as live.
   useEffect(() => {
@@ -99,6 +102,10 @@ function SettingsPage() {
     try {
       const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
       if ((res as any).checks) setChecks((res as any).checks);
+      if ((res as any).siteStatus) {
+        setSiteStatus((res as any).siteStatus);
+        setSiteMessage((res as any).siteMessage ?? null);
+      }
       if (!res.ok) {
         await supabase.from("stores").update({
           domain_verified: false, domain_last_checked_at: checkedAt, domain_last_check_error: res.error,
@@ -393,9 +400,30 @@ function SettingsPage() {
             )}
 
             {form.domain_verified && (
-              <p className="text-sm text-emerald-700">
-                ✓ Live at <a className="underline" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a>
-              </p>
+              <div className="space-y-2">
+                {siteStatus === "live" ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Live at <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
+                  </div>
+                ) : siteStatus === "setting_up" ? (
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                    <Loader2 className="h-4 w-4 mt-0.5 animate-spin" />
+                    <div>
+                      <div className="font-medium">DNS verified — Site setting up</div>
+                      <div className="text-xs mt-1">{siteMessage ?? "Cloudflare is still attaching your domain. This usually clears within a few minutes."}</div>
+                      <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => runVerify(false)} disabled={verifying}>
+                        {verifying ? "Checking…" : "Check again"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>DNS verified for <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -94,20 +94,41 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
     if (apexARecordIsMissing) return { ok: false, error: aErrors.join(" "), checks } as const;
 
     // DNS can be correct before the hosting edge attaches the domain; keep HTTPS as an informational check.
+    let siteStatus: "live" | "setting_up" | "dns_only" = "dns_only";
+    let siteMessage = "DNS verified — site is being set up";
     try {
       const r = await fetch(`https://${domain}`, { method: "GET", redirect: "manual" });
       const httpsOk = r.status >= 200 && r.status < 400;
+      let body = "";
+      try { body = (await r.text()).slice(0, 4000); } catch { /* ignore */ }
+      const cfMatch = body.match(/Error\s*(10\d{2}|5\d{2})/i);
+      const cfCode = cfMatch?.[1];
+      if (httpsOk && !cfCode) {
+        siteStatus = "live";
+        siteMessage = "Site opens successfully over HTTPS";
+      } else if (cfCode === "1001" || /DNS resolution error/i.test(body)) {
+        siteStatus = "setting_up";
+        siteMessage = "DNS verified — Cloudflare is still resolving the host (Error 1001). This usually clears within a few minutes.";
+      } else if (cfCode && /^5\d{2}$/.test(cfCode)) {
+        siteStatus = "setting_up";
+        siteMessage = `DNS verified — hosting edge returned Cloudflare Error ${cfCode}. Site is being set up.`;
+      } else {
+        siteStatus = "setting_up";
+        siteMessage = `DNS verified — site is being set up (HTTP ${r.status}).`;
+      }
       checks.push({
         key: "https-live",
         type: "HTTPS",
         host: domain,
         expected: "HTTP 200-399",
-        found: `HTTP ${r.status}`,
-        status: httpsOk ? "success" : "warning",
-        message: httpsOk ? "Site opens successfully" : "Site is not live over HTTPS yet",
+        found: cfCode ? `HTTP ${r.status} • Cloudflare ${cfCode}` : `HTTP ${r.status}`,
+        status: siteStatus === "live" ? "success" : "warning",
+        message: siteMessage,
         checkedAt,
       });
     } catch {
+      siteStatus = "setting_up";
+      siteMessage = "DNS verified — waiting for the hosting edge to attach this domain.";
       checks.push({
         key: "https-live",
         type: "HTTPS",
@@ -115,7 +136,7 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
         expected: "Reachable HTTPS site",
         found: "not reachable",
         status: "warning",
-        message: "Site will attach after DNS ownership is verified",
+        message: siteMessage,
         checkedAt,
       });
     }
@@ -130,5 +151,5 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       } as const;
     }
 
-    return { ok: true, canonicalDomain: domain, checks } as const;
+    return { ok: true, canonicalDomain: domain, checks, siteStatus, siteMessage } as const;
   });
