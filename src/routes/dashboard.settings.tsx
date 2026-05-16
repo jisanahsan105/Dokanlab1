@@ -403,13 +403,6 @@ function SettingsPage() {
                         <td className="p-2"><RecordStatus check={findCheck("txt-ownership")} /></td>
                         <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy(form.domain_verification_token)}><Copy className="h-3 w-3" /></Button></td>
                       </tr>
-                      <tr>
-                        <td className="p-2 font-mono">SITE</td>
-                        <td className="p-2 font-mono">{apexHost}</td>
-                        <td className="p-2 font-mono">HTTPS reachable</td>
-                        <td className="p-2"><RecordStatus check={findCheck("https-live")} /></td>
-                        <td className="p-2"></td>
-                      </tr>
                     </tbody>
                   </table>
                 </div>
