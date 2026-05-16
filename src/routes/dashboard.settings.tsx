@@ -126,9 +126,22 @@ function SettingsPage() {
     try {
       const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
       if ((res as any).checks) setChecks((res as any).checks);
-      if ((res as any).siteStatus) {
-        setSiteStatus((res as any).siteStatus);
-        setSiteMessage((res as any).siteMessage ?? null);
+      const nextStatus = (res as any).siteStatus ?? null;
+      const nextMessage = (res as any).siteMessage ?? null;
+      if (nextStatus) {
+        setSiteStatus(nextStatus);
+        setSiteMessage(nextMessage);
+        // Persist so other sessions / reload show fresh state
+        if (nextStatus !== form.site_status || nextMessage !== form.site_status_message) {
+          await supabase.from("stores").update({
+            site_status: nextStatus,
+            site_status_message: nextMessage,
+            site_status_checked_at: checkedAt,
+          }).eq("id", form.id);
+          if (silent && nextStatus === "live" && form.site_status !== "live") {
+            toast.success("✅ Your site is now live with SSL!");
+          }
+        }
       }
       if (!res.ok) {
         await supabase.from("stores").update({
