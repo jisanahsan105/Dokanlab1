@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { verifyDomainDns } from "@/lib/domain.functions";
-import { Copy, CheckCircle2, XCircle, Globe } from "lucide-react";
+import { Copy, CheckCircle2, XCircle, Globe, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
 
@@ -24,6 +24,8 @@ function SettingsPage() {
   const [verifying, setVerifying] = useState(false);
   const verifiedHealthCheckKey = useRef<string | null>(null);
   const [checks, setChecks] = useState<Array<{ key: string; status: "success" | "warning" | "error"; found: string; message: string; checkedAt: string }>>([]);
+  const [siteStatus, setSiteStatus] = useState<"live" | "setting_up" | "dns_only" | null>(null);
+  const [siteMessage, setSiteMessage] = useState<string | null>(null);
   const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
@@ -99,6 +101,10 @@ function SettingsPage() {
     try {
       const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
       if ((res as any).checks) setChecks((res as any).checks);
+      if ((res as any).siteStatus) {
+        setSiteStatus((res as any).siteStatus);
+        setSiteMessage((res as any).siteMessage ?? null);
+      }
       if (!res.ok) {
         await supabase.from("stores").update({
           domain_verified: false, domain_last_checked_at: checkedAt, domain_last_check_error: res.error,
