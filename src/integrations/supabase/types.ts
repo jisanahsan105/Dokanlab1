@@ -212,6 +212,9 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string
+          site_status: string | null
+          site_status_checked_at: string | null
+          site_status_message: string | null
           slug: string
           theme: string
           updated_at: string
@@ -244,6 +247,9 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id: string
+          site_status?: string | null
+          site_status_checked_at?: string | null
+          site_status_message?: string | null
           slug: string
           theme?: string
           updated_at?: string
@@ -276,6 +282,9 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string
+          site_status?: string | null
+          site_status_checked_at?: string | null
+          site_status_message?: string | null
           slug?: string
           theme?: string
           updated_at?: string
