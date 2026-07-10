@@ -15,6 +15,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
+import { Route as StoreSuccessRouteImport } from './routes/store..success'
+import { Route as StoreCheckoutRouteImport } from './routes/store..checkout'
+import { Route as StoreCartRouteImport } from './routes/store..cart'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
 import { Route as DashboardReviewsRouteImport } from './routes/dashboard.reviews'
@@ -53,6 +56,21 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRoute,
+} as any)
+const StoreSuccessRoute = StoreSuccessRouteImport.update({
+  id: '/store/success',
+  path: '/store/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreCheckoutRoute = StoreCheckoutRouteImport.update({
+  id: '/store/checkout',
+  path: '/store/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreCartRoute = StoreCartRouteImport.update({
+  id: '/store/cart',
+  path: '/store/cart',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const StoreSlugRoute = StoreSlugRouteImport.update({
   id: '/store/$slug',
@@ -107,6 +125,9 @@ export interface FileRoutesByFullPath {
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/store/cart': typeof StoreCartRoute
+  '/store/checkout': typeof StoreCheckoutRoute
+  '/store/success': typeof StoreSuccessRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/store/$slug/c/$categoryId': typeof StoreSlugCCategoryIdRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
@@ -122,6 +143,9 @@ export interface FileRoutesByTo {
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/store/cart': typeof StoreCartRoute
+  '/store/checkout': typeof StoreCheckoutRoute
+  '/store/success': typeof StoreSuccessRoute
   '/dashboard': typeof DashboardIndexRoute
   '/store/$slug/c/$categoryId': typeof StoreSlugCCategoryIdRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
@@ -139,6 +163,9 @@ export interface FileRoutesById {
   '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
+  '/store/cart': typeof StoreCartRoute
+  '/store/checkout': typeof StoreCheckoutRoute
+  '/store/success': typeof StoreSuccessRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/store/$slug/c/$categoryId': typeof StoreSlugCCategoryIdRoute
   '/store/$slug/p/$productId': typeof StoreSlugPProductIdRoute
@@ -157,6 +184,9 @@ export interface FileRouteTypes {
     | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
+    | '/store/cart'
+    | '/store/checkout'
+    | '/store/success'
     | '/dashboard/'
     | '/store/$slug/c/$categoryId'
     | '/store/$slug/p/$productId'
@@ -172,6 +202,9 @@ export interface FileRouteTypes {
     | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
+    | '/store/cart'
+    | '/store/checkout'
+    | '/store/success'
     | '/dashboard'
     | '/store/$slug/c/$categoryId'
     | '/store/$slug/p/$productId'
@@ -188,6 +221,9 @@ export interface FileRouteTypes {
     | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
+    | '/store/cart'
+    | '/store/checkout'
+    | '/store/success'
     | '/dashboard/'
     | '/store/$slug/c/$categoryId'
     | '/store/$slug/p/$productId'
@@ -200,6 +236,9 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   StoreSlugRoute: typeof StoreSlugRouteWithChildren
+  StoreCartRoute: typeof StoreCartRoute
+  StoreCheckoutRoute: typeof StoreCheckoutRoute
+  StoreSuccessRoute: typeof StoreSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -245,6 +284,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/store/success': {
+      id: '/store/success'
+      path: '/store/success'
+      fullPath: '/store/success'
+      preLoaderRoute: typeof StoreSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/checkout': {
+      id: '/store/checkout'
+      path: '/store/checkout'
+      fullPath: '/store/checkout'
+      preLoaderRoute: typeof StoreCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store/cart': {
+      id: '/store/cart'
+      path: '/store/cart'
+      fullPath: '/store/cart'
+      preLoaderRoute: typeof StoreCartRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/store/$slug': {
       id: '/store/$slug'
@@ -348,6 +408,9 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   StoreSlugRoute: StoreSlugRouteWithChildren,
+  StoreCartRoute: StoreCartRoute,
+  StoreCheckoutRoute: StoreCheckoutRoute,
+  StoreSuccessRoute: StoreSuccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

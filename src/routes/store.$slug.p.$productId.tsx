@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { T, type Lang } from "@/lib/i18n";
+import { useCart } from "@/lib/use-cart";
 import { toast } from "sonner";
-import { ArrowLeft, Phone, Package } from "lucide-react";
+import { ArrowLeft, Phone, Package, ShoppingCart } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug/p/$productId")({ component: ProductPage });
 
@@ -19,12 +20,21 @@ function ProductPage() {
   const [store, setStore] = useState<any>(null);
   const [product, setProduct] = useState<any>(null);
   const [salesCount, setSalesCount] = useState(0);
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "en";
+    return (window.localStorage.getItem(`lang:${slug}`) as Lang) || "en";
+  });
   const [qty, setQty] = useState(1);
   const [orderOpen, setOrderOpen] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reloadReviews, setReloadReviews] = useState(0);
+  const [related, setRelated] = useState<any[]>([]);
+  const cart = useCart(slug);
   const t = T[lang];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(`lang:${slug}`, lang);
+  }, [lang, slug]);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +63,19 @@ function ProductPage() {
     })();
   }, [product?.id, reloadReviews]);
 
+  useEffect(() => {
+    if (!store || !product) return;
+    (async () => {
+      const q = supabase.from("products").select("*").eq("store_id", store.id).eq("active", true).neq("id", product.id).limit(8);
+      const filter = product.category_id
+        ? await q.eq("category_id", product.category_id)
+        : product.category
+          ? await q.eq("category", product.category)
+          : await q.order("created_at", { ascending: false });
+      setRelated((filter.data ?? []).slice(0, 8));
+    })();
+  }, [store, product]);
+
   if (!store || !product) return <div className="grid min-h-screen place-items-center text-slate-500">Loading…</div>;
 
   const isDigital = store.theme === "digital";
@@ -76,6 +99,14 @@ function ProductPage() {
           <div className="flex items-center gap-2">
             <Link to="/store/$slug" params={{ slug }} className="inline-flex items-center gap-1.5 text-sm font-medium hover:opacity-80">
               <ArrowLeft className="h-4 w-4" /> {t.back}
+            </Link>
+            <Link to="/store/$slug/cart" params={{ slug }}
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 hover:bg-slate-100"
+              aria-label={t.cart}>
+              <ShoppingCart className="h-4 w-4" />
+              {cart.count > 0 && (
+                <span className="absolute -top-1 -right-1 grid h-4 min-w-[1rem] place-items-center rounded-full px-1 text-[10px] font-bold text-white" style={{ background: primary }}>{cart.count}</span>
+              )}
             </Link>
             <div className="flex gap-1 rounded-full border p-1">
               {(["en", "bn"] as Lang[]).map((l) => (
@@ -138,7 +169,10 @@ function ProductPage() {
                 style={{ background: "#2563EB" }}>
                 অর্ডার করুন
               </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOrderOpen(true)}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
+                cart.add({ id: product.id, title: product.title, price: Number(product.price), image_url: product.image_url }, qty);
+                toast.success(t.addToCart + " ✓");
+              }}
                 className="rounded px-5 py-2 text-sm font-bold text-white shadow hover:opacity-95"
                 style={{ background: "#F59E0B" }}>
                 কার্টে রাখুন
@@ -202,6 +236,30 @@ function ProductPage() {
           reviews={reviews}
           onSubmitted={() => setReloadReviews((n) => n + 1)}
         />
+
+        {related.length > 0 && (
+          <section className="mt-6">
+            <div className="mb-4 flex items-end justify-between border-b pb-2" style={{ borderColor: "#e2e8f0" }}>
+              <h2 className="text-lg font-bold text-slate-900">{t.relatedProducts}</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {related.map((r) => (
+                <Link key={r.id} to="/store/$slug/p/$productId" params={{ slug, productId: r.id }} preload="intent"
+                  className="group overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                  <div className="overflow-hidden bg-white p-2">
+                    {r.image_url
+                      ? <img src={r.image_url} alt={r.title} className="aspect-square w-full object-contain transition duration-500 group-hover:scale-105" />
+                      : <div className="grid aspect-square place-items-center text-slate-300"><Package className="h-10 w-10" /></div>}
+                  </div>
+                  <div className="px-3 pb-3">
+                    <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-tight" style={{ color: primary }}>{r.title}</h3>
+                    <div className="mt-1 text-sm font-bold text-slate-900">৳ {Number(r.price).toLocaleString()}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Order modal */}

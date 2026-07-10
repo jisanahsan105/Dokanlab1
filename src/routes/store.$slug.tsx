@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppFab } from "@/components/whatsapp-fab";
 import { T, type Lang } from "@/lib/i18n";
+import { useCart } from "@/lib/use-cart";
+import { toast } from "sonner";
 import {
   Search, ShoppingBag, ShoppingCart, Download, Sparkles, Flame, Star,
   ChevronRight, FileText, Package, Tag, ArrowRight,
-  MapPin, Mail, Phone, Send, Facebook,
+  MapPin, Mail, Phone, Send, Facebook, Truck, ShieldCheck, RotateCcw, Headphones,
 } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug")({ component: Storefront });
@@ -40,11 +42,20 @@ function StoreHome({ slug }: { slug: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "en";
+    return (window.localStorage.getItem(`lang:${slug}`) as Lang) || "en";
+  });
   const [activeCat, setActiveCat] = useState<string>("__all__");
   const [query, setQuery] = useState("");
+  const [priceMax, setPriceMax] = useState<number | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const cart = useCart(slug);
   const t = T[lang];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(`lang:${slug}`, lang);
+  }, [lang, slug]);
 
   useEffect(() => {
     (async () => {
@@ -100,9 +111,15 @@ function StoreHome({ slug }: { slug: string }) {
     return products.filter(p => {
       if (activeCat !== "__all__" && p.category !== activeCat) return false;
       if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
+      if (priceMax != null && Number(p.price) > priceMax) return false;
       return true;
     });
-  }, [products, activeCat, query]);
+  }, [products, activeCat, query, priceMax]);
+
+  const priceCeiling = useMemo(() => {
+    if (products.length === 0) return 0;
+    return Math.max(...products.map(p => Number(p.price)));
+  }, [products]);
 
   const topSelling = useMemo(() => {
     return [...products]
@@ -203,10 +220,14 @@ function StoreHome({ slug }: { slug: string }) {
             ))}
           </div>
 
-          <button className="relative grid h-11 w-11 place-items-center rounded-full transition hover:scale-105" style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }} aria-label={t.cart}>
+          <Link to="/store/$slug/cart" params={{ slug }}
+            className="relative grid h-11 w-11 place-items-center rounded-full transition hover:scale-105"
+            style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }} aria-label={t.cart}>
             <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--sf-accent)" }}>0</span>
-          </button>
+            {cart.count > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full px-1 text-[10px] font-bold text-white" style={{ background: "var(--sf-accent)" }}>{cart.count}</span>
+            )}
+          </Link>
         </div>
 
         {/* Colored categories strip */}
@@ -293,6 +314,28 @@ function StoreHome({ slug }: { slug: string }) {
       )}
 
       <main className="container mx-auto px-4 py-10 space-y-14">
+        {/* Trust badges */}
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[
+            { icon: Truck, title: t.fastDelivery, desc: t.fastDeliveryDesc },
+            { icon: ShieldCheck, title: t.securePayment, desc: t.securePaymentDesc },
+            { icon: RotateCcw, title: t.easyReturn, desc: t.easyReturnDesc },
+            { icon: Headphones, title: t.support247, desc: t.support247Desc },
+          ].map((b) => (
+            <div key={b.title} className="flex items-center gap-3 rounded-2xl p-4"
+              style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)" }}>
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
+                style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }}>
+                <b.icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-bold">{b.title}</div>
+                <div className="truncate text-xs" style={{ color: "var(--sf-muted)" }}>{b.desc}</div>
+              </div>
+            </div>
+          ))}
+        </section>
+
         {/* Popular Categories grid (physical theme, BDStall-style) */}
         {!isDigital && categories.length > 0 && (
           <Section icon={<Tag className="h-5 w-5" />} title={t.categories}>
@@ -387,6 +430,24 @@ function StoreHome({ slug }: { slug: string }) {
                       <CatBtn key={c} active={activeCat === c} onClick={() => setActiveCat(c)} label={c} />
                     ))}
                   </div>
+                  {priceCeiling > 0 && (
+                    <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--sf-border)" }}>
+                      <div className="mb-2 flex items-center justify-between">
+                        <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--sf-muted)" }}>{t.filterByPrice}</h3>
+                        {priceMax != null && (
+                          <button onClick={() => setPriceMax(null)} className="text-xs font-semibold" style={{ color: "var(--sf-primary)" }}>{t.clearFilters}</button>
+                        )}
+                      </div>
+                      <input type="range" min={0} max={priceCeiling} step={Math.max(1, Math.round(priceCeiling / 100))}
+                        value={priceMax ?? priceCeiling}
+                        onChange={(e) => setPriceMax(Number(e.target.value))}
+                        className="w-full accent-emerald-600" />
+                      <div className="mt-1 flex justify-between text-xs" style={{ color: "var(--sf-muted)" }}>
+                        <span>৳ 0</span>
+                        <span>৳ {(priceMax ?? priceCeiling).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
                 </aside>
               )}
               <div>
@@ -394,11 +455,14 @@ function StoreHome({ slug }: { slug: string }) {
                   <div className="grid gap-3 md:grid-cols-2">
                     {filtered.map(p => <DigitalCard key={p.id} p={p} slug={slug} t={t} />)}
                   </div>
-                ) : (
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {filtered.map(p => <ProductCard key={p.id} p={p} slug={slug} isDigital={false} t={t} />)}
-                  </div>
-                )}
+                 ) : (
+                   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                     {filtered.map(p => (
+                       <ProductCard key={p.id} p={p} slug={slug} isDigital={false} t={t}
+                         onAddToCart={() => { cart.add({ id: p.id, title: p.title, price: Number(p.price), image_url: p.image_url }); toast.success(t.addToCart + " ✓"); }} />
+                     ))}
+                   </div>
+                 )}
               </div>
             </div>
           )}
@@ -440,13 +504,14 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string; compact?: boolean }) {
+function ProductCard({ p, slug, isDigital, t, ribbon, compact, onAddToCart }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string; compact?: boolean; onAddToCart?: () => void }) {
   const inStock = p.active;
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
+      <div
         className="group block overflow-hidden rounded-2xl transition"
         style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", boxShadow: "0 4px 20px -8px rgba(0,0,0,0.12)" }}>
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent" className="block">
         <div className="relative overflow-hidden">
           {p.image_url
             ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-110" />
@@ -485,7 +550,18 @@ function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; s
             </span>
           )}
         </div>
-      </Link>
+        </Link>
+        {onAddToCart && !compact && !isDigital && (
+          <div className="px-4 pb-4">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddToCart(); }}
+              className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--sf-accent)" }}>
+              <ShoppingCart className="h-3.5 w-3.5" /> {t.addToCart}
+            </button>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
