@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as StoreSlugRouteImport } from './routes/store.$slug'
 import { Route as DashboardSettingsRouteImport } from './routes/dashboard.settings'
+import { Route as DashboardReviewsRouteImport } from './routes/dashboard.reviews'
 import { Route as DashboardProductsRouteImport } from './routes/dashboard.products'
 import { Route as DashboardOrdersRouteImport } from './routes/dashboard.orders'
 import { Route as DashboardCategoriesRouteImport } from './routes/dashboard.categories'
@@ -63,6 +64,11 @@ const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardReviewsRoute = DashboardReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardProductsRoute = DashboardProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard': typeof DashboardIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/dashboard/categories': typeof DashboardCategoriesRoute
   '/dashboard/orders': typeof DashboardOrdersRoute
   '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/reviews': typeof DashboardReviewsRoute
   '/dashboard/settings': typeof DashboardSettingsRoute
   '/store/$slug': typeof StoreSlugRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard/'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/dashboard/categories'
     | '/dashboard/orders'
     | '/dashboard/products'
+    | '/dashboard/reviews'
     | '/dashboard/settings'
     | '/store/$slug'
     | '/dashboard/'
@@ -248,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSettingsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/reviews': {
+      id: '/dashboard/reviews'
+      path: '/reviews'
+      fullPath: '/dashboard/reviews'
+      preLoaderRoute: typeof DashboardReviewsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/products': {
       id: '/dashboard/products'
       path: '/products'
@@ -290,6 +309,7 @@ interface DashboardRouteChildren {
   DashboardCategoriesRoute: typeof DashboardCategoriesRoute
   DashboardOrdersRoute: typeof DashboardOrdersRoute
   DashboardProductsRoute: typeof DashboardProductsRoute
+  DashboardReviewsRoute: typeof DashboardReviewsRoute
   DashboardSettingsRoute: typeof DashboardSettingsRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -298,6 +318,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardCategoriesRoute: DashboardCategoriesRoute,
   DashboardOrdersRoute: DashboardOrdersRoute,
   DashboardProductsRoute: DashboardProductsRoute,
+  DashboardReviewsRoute: DashboardReviewsRoute,
   DashboardSettingsRoute: DashboardSettingsRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
