@@ -9,9 +9,18 @@ export const Route = createFileRoute("/dashboard/orders")({ component: OrdersPag
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
+type TabKey = "pending" | "active" | "delivered" | "cancelled";
+const TABS: { key: TabKey; label: string; statuses: string[] }[] = [
+  { key: "pending", label: "Pending", statuses: ["pending"] },
+  { key: "active", label: "Active", statuses: ["confirmed", "shipped"] },
+  { key: "delivered", label: "Delivered", statuses: ["delivered"] },
+  { key: "cancelled", label: "Cancelled", statuses: ["cancelled"] },
+];
+
 function OrdersPage() {
   const { store } = useMyStore();
   const [orders, setOrders] = useState<any[]>([]);
+  const [tab, setTab] = useState<TabKey>("pending");
 
   const load = async () => {
     if (!store) return;
@@ -35,14 +44,43 @@ function OrdersPage() {
   };
 
   if (!store) return null;
+  const counts: Record<TabKey, number> = {
+    pending: 0, active: 0, delivered: 0, cancelled: 0,
+  };
+  for (const o of orders) {
+    for (const t of TABS) if (t.statuses.includes(o.status)) counts[t.key]++;
+  }
+  const active = TABS.find((t) => t.key === tab)!;
+  const filtered = orders.filter((o) => active.statuses.includes(o.status));
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Orders</h1>
-      {orders.length === 0 ? (
+      <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-card p-1 shadow-sm">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              tab === t.key ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+            }`}
+          >
+            {t.label}
+            <span
+              className={`inline-flex min-w-[1.25rem] justify-center rounded-full px-1.5 text-xs ${
+                tab === t.key ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {counts[t.key]}
+            </span>
+          </button>
+        ))}
+      </div>
+      {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center text-muted-foreground">No orders yet.</div>
       ) : (
         <div className="space-y-3">
-          {orders.map((o) => (
+          {filtered.map((o) => (
             <div key={o.id} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
