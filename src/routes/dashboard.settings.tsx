@@ -210,6 +210,7 @@ function SettingsPage() {
       name: form.name, bio: form.bio, logo_url: form.logo_url, whatsapp: form.whatsapp, theme: form.theme,
       banner_url: form.banner_url, banner_enabled: form.banner_enabled,
       footer_address: form.footer_address, footer_email: form.footer_email, footer_phone: form.footer_phone,
+      product_whatsapp_url: form.product_whatsapp_url,
       footer_about_url: form.footer_about_url, footer_facebook_url: form.footer_facebook_url,
       footer_terms_url: form.footer_terms_url, footer_warranty_url: form.footer_warranty_url,
       footer_playstore_url: form.footer_playstore_url, footer_appstore_url: form.footer_appstore_url,
@@ -230,6 +231,17 @@ function SettingsPage() {
         <div><Label>Store name</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
         <div><Label>Bio</Label><Textarea value={form.bio ?? ""} onChange={(e) => setForm({ ...form, bio: e.target.value })} /></div>
         <div><Label>WhatsApp number</Label><Input value={form.whatsapp ?? ""} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="8801XXXXXXXXX" /></div>
+        <div>
+          <Label>Product page WhatsApp link</Label>
+          <Input
+            value={form.product_whatsapp_url ?? ""}
+            onChange={(e) => setForm({ ...form, product_whatsapp_url: e.target.value })}
+            placeholder="https://wa.me/8801XXXXXXXXX?text=Hi"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Shown as a green WhatsApp button on every product page (below the call-to-order box).
+          </p>
+        </div>
         <div>
           <Label>Logo</Label>
           <p className="text-xs text-muted-foreground mb-2">Recommended size: <strong>200 × 200 px</strong> (square, PNG/JPG, max 2 MB)</p>
