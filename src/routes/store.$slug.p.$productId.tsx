@@ -236,6 +236,30 @@ function ProductPage() {
           reviews={reviews}
           onSubmitted={() => setReloadReviews((n) => n + 1)}
         />
+
+        {related.length > 0 && (
+          <section className="mt-6">
+            <div className="mb-4 flex items-end justify-between border-b pb-2" style={{ borderColor: "#e2e8f0" }}>
+              <h2 className="text-lg font-bold text-slate-900">{t.relatedProducts}</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {related.map((r) => (
+                <Link key={r.id} to="/store/$slug/p/$productId" params={{ slug, productId: r.id }} preload="intent"
+                  className="group overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+                  <div className="overflow-hidden bg-white p-2">
+                    {r.image_url
+                      ? <img src={r.image_url} alt={r.title} className="aspect-square w-full object-contain transition duration-500 group-hover:scale-105" />
+                      : <div className="grid aspect-square place-items-center text-slate-300"><Package className="h-10 w-10" /></div>}
+                  </div>
+                  <div className="px-3 pb-3">
+                    <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-tight" style={{ color: primary }}>{r.title}</h3>
+                    <div className="mt-1 text-sm font-bold text-slate-900">৳ {Number(r.price).toLocaleString()}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Order modal */}
