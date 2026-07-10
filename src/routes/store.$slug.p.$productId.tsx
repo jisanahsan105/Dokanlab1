@@ -297,3 +297,98 @@ function OrderForm({ store, product, qty, setQty, t, onDone }:
     </form>
   );
 }
+
+function ReviewsSection({
+  storeId, productId, primary, reviews, onSubmitted,
+}: { storeId: string; productId: string; primary: string; reviews: any[]; onSubmitted: () => void }) {
+  const [name, setName] = useState("");
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const avg = reviews.length
+    ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1)
+    : "0";
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return toast.error("Please enter your name");
+    setSubmitting(true);
+    const { error } = await supabase.from("reviews").insert({
+      store_id: storeId, product_id: productId,
+      customer_name: name.trim(), rating, comment: comment.trim() || null,
+      approved: false,
+    });
+    setSubmitting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Thanks! Your review will appear after approval.");
+    setName(""); setComment(""); setRating(5);
+    onSubmitted();
+  };
+
+  const Star = ({ filled }: { filled: boolean }) => (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 ${filled ? "fill-amber-400" : "fill-slate-200"}`}>
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+    </svg>
+  );
+
+  return (
+    <div className="mt-5 space-y-5">
+      <div className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
+        <h3 className="text-base font-bold text-slate-900">Ratings &amp; Reviews From Our Customer</h3>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="text-3xl font-extrabold">{avg} /5</div>
+          <div className="flex">{[1, 2, 3, 4, 5].map((i) => <Star key={i} filled={i <= Math.round(Number(avg))} />)}</div>
+          <div className="text-sm text-slate-500">({reviews.length} review{reviews.length === 1 ? "" : "s"})</div>
+        </div>
+
+        {reviews.length > 0 && (
+          <ul className="mt-5 divide-y divide-slate-100">
+            {reviews.map((r) => (
+              <li key={r.id} className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-slate-800">{r.customer_name}</div>
+                  <div className="flex">{[1, 2, 3, 4, 5].map((i) => <Star key={i} filled={i <= Number(r.rating)} />)}</div>
+                </div>
+                {r.comment && <p className="mt-1 text-sm text-slate-600">{r.comment}</p>}
+                <div className="mt-1 text-xs text-slate-400">{new Date(r.created_at).toLocaleDateString()}</div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <form onSubmit={submit} className="rounded-md border border-slate-200 bg-white p-6 shadow-sm">
+        <h4 className="text-sm font-bold text-slate-900">Write a review</h4>
+        <div className="mt-3 grid gap-3">
+          <div>
+            <Label className="text-xs">Your name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div>
+            <Label className="text-xs">Your rating</Label>
+            <div className="mt-1 flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <button key={i} type="button" onClick={() => setRating(i)} aria-label={`${i} star`}>
+                  <svg viewBox="0 0 24 24" className={`h-6 w-6 ${i <= rating ? "fill-amber-400" : "fill-slate-200"}`}>
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Your review</Label>
+            <Textarea rows={3} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Share your experience…" />
+          </div>
+          <button type="submit" disabled={submitting}
+            className="w-fit rounded px-5 py-2 text-sm font-bold text-white shadow disabled:opacity-60"
+            style={{ background: primary }}>
+            {submitting ? "Submitting…" : "Submit review"}
+          </button>
+          <p className="text-xs text-slate-400">Your review will appear after the store owner approves it.</p>
+        </div>
+      </form>
+    </div>
+  );
+}
