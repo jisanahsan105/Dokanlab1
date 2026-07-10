@@ -14,12 +14,13 @@ function Overview() {
     (async () => {
       const [{ count: products }, { data: orders }] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }).eq("store_id", store.id),
-        supabase.from("orders").select("total").eq("store_id", store.id),
+        supabase.from("orders").select("total,status").eq("store_id", store.id),
       ]);
+      const activeOrders = (orders ?? []).filter((o: any) => o.status !== "cancelled");
       setStats({
         products: products ?? 0,
-        orders: orders?.length ?? 0,
-        revenue: orders?.reduce((s, o) => s + Number(o.total), 0) ?? 0,
+        orders: activeOrders.length,
+        revenue: activeOrders.reduce((s, o: any) => s + Number(o.total), 0),
       });
     })();
   }, [store]);
