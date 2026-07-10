@@ -184,6 +184,54 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          approved: boolean
+          comment: string | null
+          created_at: string
+          customer_name: string
+          id: string
+          product_id: string
+          rating: number
+          store_id: string
+        }
+        Insert: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          customer_name: string
+          id?: string
+          product_id: string
+          rating: number
+          store_id: string
+        }
+        Update: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           banner_enabled: boolean
@@ -212,6 +260,7 @@ export type Database = {
           logo_url: string | null
           name: string
           owner_id: string
+          product_whatsapp_url: string | null
           site_status: string | null
           site_status_checked_at: string | null
           site_status_message: string | null
@@ -247,6 +296,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           owner_id: string
+          product_whatsapp_url?: string | null
           site_status?: string | null
           site_status_checked_at?: string | null
           site_status_message?: string | null
@@ -282,6 +332,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           owner_id?: string
+          product_whatsapp_url?: string | null
           site_status?: string | null
           site_status_checked_at?: string | null
           site_status_message?: string | null
