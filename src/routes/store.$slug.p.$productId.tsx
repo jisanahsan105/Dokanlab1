@@ -169,7 +169,10 @@ function ProductPage() {
                 style={{ background: "#2563EB" }}>
                 অর্ডার করুন
               </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setOrderOpen(true)}
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
+                cart.add({ id: product.id, title: product.title, price: Number(product.price), image_url: product.image_url }, qty);
+                toast.success(t.addToCart + " ✓");
+              }}
                 className="rounded px-5 py-2 text-sm font-bold text-white shadow hover:opacity-95"
                 style={{ background: "#F59E0B" }}>
                 কার্টে রাখুন
