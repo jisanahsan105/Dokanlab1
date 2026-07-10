@@ -42,11 +42,20 @@ function StoreHome({ slug }: { slug: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [dbCategories, setDbCategories] = useState<DbCategory[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, number>>({});
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "en";
+    return (window.localStorage.getItem(`lang:${slug}`) as Lang) || "en";
+  });
   const [activeCat, setActiveCat] = useState<string>("__all__");
   const [query, setQuery] = useState("");
+  const [priceMax, setPriceMax] = useState<number | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const cart = useCart(slug);
   const t = T[lang];
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(`lang:${slug}`, lang);
+  }, [lang, slug]);
 
   useEffect(() => {
     (async () => {
@@ -102,9 +111,15 @@ function StoreHome({ slug }: { slug: string }) {
     return products.filter(p => {
       if (activeCat !== "__all__" && p.category !== activeCat) return false;
       if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
+      if (priceMax != null && Number(p.price) > priceMax) return false;
       return true;
     });
-  }, [products, activeCat, query]);
+  }, [products, activeCat, query, priceMax]);
+
+  const priceCeiling = useMemo(() => {
+    if (products.length === 0) return 0;
+    return Math.max(...products.map(p => Number(p.price)));
+  }, [products]);
 
   const topSelling = useMemo(() => {
     return [...products]
