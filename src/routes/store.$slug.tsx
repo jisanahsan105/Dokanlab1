@@ -220,10 +220,14 @@ function StoreHome({ slug }: { slug: string }) {
             ))}
           </div>
 
-          <button className="relative grid h-11 w-11 place-items-center rounded-full transition hover:scale-105" style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }} aria-label={t.cart}>
+          <Link to="/store/$slug/cart" params={{ slug }}
+            className="relative grid h-11 w-11 place-items-center rounded-full transition hover:scale-105"
+            style={{ background: "var(--sf-surface-2)", color: "var(--sf-primary)" }} aria-label={t.cart}>
             <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: "var(--sf-accent)" }}>0</span>
-          </button>
+            {cart.count > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-5 min-w-[1.25rem] place-items-center rounded-full px-1 text-[10px] font-bold text-white" style={{ background: "var(--sf-accent)" }}>{cart.count}</span>
+            )}
+          </Link>
         </div>
 
         {/* Colored categories strip */}
