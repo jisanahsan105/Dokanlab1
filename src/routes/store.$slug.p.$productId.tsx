@@ -118,7 +118,8 @@ function ProductPage() {
             </div>
 
             <div className="mt-3 text-sm font-bold text-slate-800">
-              Average Rating : 0 /5
+              Average Rating : {reviews.length ? (reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / reviews.length).toFixed(1) : "0"} /5
+              <span className="ml-1 font-normal text-slate-500">({reviews.length})</span>
             </div>
 
             {/* Quantity stepper - 3 small boxes [+][n][-] like screenshot */}
