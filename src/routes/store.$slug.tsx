@@ -455,11 +455,14 @@ function StoreHome({ slug }: { slug: string }) {
                   <div className="grid gap-3 md:grid-cols-2">
                     {filtered.map(p => <DigitalCard key={p.id} p={p} slug={slug} t={t} />)}
                   </div>
-                ) : (
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {filtered.map(p => <ProductCard key={p.id} p={p} slug={slug} isDigital={false} t={t} />)}
-                  </div>
-                )}
+                 ) : (
+                   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                     {filtered.map(p => (
+                       <ProductCard key={p.id} p={p} slug={slug} isDigital={false} t={t}
+                         onAddToCart={() => { cart.add({ id: p.id, title: p.title, price: Number(p.price), image_url: p.image_url }); toast.success(t.addToCart + " ✓"); }} />
+                     ))}
+                   </div>
+                 )}
               </div>
             </div>
           )}
