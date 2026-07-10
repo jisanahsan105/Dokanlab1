@@ -504,13 +504,14 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string; compact?: boolean }) {
+function ProductCard({ p, slug, isDigital, t, ribbon, compact, onAddToCart }: { p: Product; slug: string; isDigital: boolean; t: any; ribbon?: string; compact?: boolean; onAddToCart?: () => void }) {
   const inStock = p.active;
   return (
     <motion.div whileHover={{ y: -6 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-      <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent"
+      <div
         className="group block overflow-hidden rounded-2xl transition"
         style={{ background: "var(--sf-surface)", border: "1px solid var(--sf-border)", boxShadow: "0 4px 20px -8px rgba(0,0,0,0.12)" }}>
+        <Link to="/store/$slug/p/$productId" params={{ slug, productId: p.id }} preload="intent" className="block">
         <div className="relative overflow-hidden">
           {p.image_url
             ? <img src={p.image_url} alt={p.title} className="aspect-square w-full object-cover transition duration-500 group-hover:scale-110" />
@@ -549,7 +550,18 @@ function ProductCard({ p, slug, isDigital, t, ribbon, compact }: { p: Product; s
             </span>
           )}
         </div>
-      </Link>
+        </Link>
+        {onAddToCart && !compact && !isDigital && (
+          <div className="px-4 pb-4">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddToCart(); }}
+              className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md text-xs font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--sf-accent)" }}>
+              <ShoppingCart className="h-3.5 w-3.5" /> {t.addToCart}
+            </button>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
