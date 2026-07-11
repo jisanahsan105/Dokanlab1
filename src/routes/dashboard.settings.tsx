@@ -589,11 +589,20 @@ function SettingsPage() {
           <Globe className="h-5 w-5 text-primary" />
           <Label className="text-base">Custom Domain</Label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Connect your own domain (e.g. <code>shop.example.com</code>). Once verified,
-          your storefront will be served at that domain, and admin login will live at
-          <code> yourdomain.com/admin</code>.
-        </p>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <div className="font-semibold">Complete the Lovable domain setup first</div>
+              <p className="mt-1 text-xs leading-relaxed">
+                Domain SSL and hosting must be connected from Project Settings → Domains. After it becomes Active there, save the same domain below so this store opens on that domain.
+              </p>
+              <a href="https://docs.lovable.dev/features/custom-domain" target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold underline">
+                Custom domain setup guide <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </div>
+        </div>
 
         {!form.custom_domain ? (
           <div className="flex gap-2">
@@ -605,103 +614,33 @@ function SettingsPage() {
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{form.custom_domain}</span>
-                {form.domain_verified ? (
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                    <XCircle className="h-3 w-3" /> Pending
-                  </span>
-                )}
+                <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                  <CheckCircle2 className="h-3 w-3" /> Saved
+                </span>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={disconnectDomain}>Disconnect</Button>
             </div>
-
-            {!form.domain_verified && (
-              <div className="space-y-3">
-                <p className="text-sm font-medium">Add these DNS records at your registrar:</p>
-                <div className="overflow-hidden rounded-lg border border-border">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
-                      <tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Name</th><th className="p-2 text-left">Value</th><th className="p-2 text-left">Status</th><th className="p-2"></th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      <tr>
-                        <td className="p-2 font-mono">A</td>
-                        <td className="p-2 font-mono">@</td>
-                        <td className="p-2 font-mono">185.158.133.1</td>
-                        <td className="p-2"><RecordStatus check={findCheck(`a-${apexHost}`)} /></td>
-                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-mono">A</td>
-                        <td className="p-2 font-mono">www</td>
-                        <td className="p-2 font-mono">185.158.133.1</td>
-                        <td className="p-2"><RecordStatus check={findCheck(`a-${wwwHost}`)} /></td>
-                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy("185.158.133.1")}><Copy className="h-3 w-3" /></Button></td>
-                      </tr>
-                      <tr>
-                        <td className="p-2 font-mono">TXT</td>
-                        <td className="p-2 font-mono">_lovable-verify</td>
-                        <td className="p-2 font-mono break-all">{form.domain_verification_token}</td>
-                        <td className="p-2"><RecordStatus check={findCheck("txt-ownership")} /></td>
-                        <td className="p-2 text-right"><Button type="button" size="sm" variant="ghost" onClick={() => copy(form.domain_verification_token)}><Copy className="h-3 w-3" /></Button></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-muted-foreground">DNS changes can take 5 minutes to a few hours to propagate.</p>
-                <div className="flex items-center gap-3">
-                  <Button type="button" onClick={verify} disabled={verifying}>{verifying ? "Verifying…" : "Verify domain"}</Button>
-                  <span className="text-xs text-muted-foreground">Auto-checking every 30s…</span>
-                </div>
-                {form.domain_last_checked_at && (
-                  <div className="rounded-lg border border-border bg-muted/20 p-3 text-xs">
-                    <div className="text-muted-foreground">
-                      Last check: <strong>{new Date(form.domain_last_checked_at).toLocaleTimeString()}</strong>
-                    </div>
-                    {form.domain_last_check_error && (
-                      <>
-                        <div className="mt-1 text-amber-700">⚠ {form.domain_last_check_error}</div>
-                        <Button type="button" size="sm" variant="outline" className="mt-2" onClick={retryVerify} disabled={verifying}>
-                          {verifying ? "Retrying…" : "Retry verification"}
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                )}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>Store routing saved for <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
               </div>
-            )}
-
-            {form.domain_verified && (
-              <div className="space-y-2">
-                {siteStatus === "live" ? (
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Live at <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
-                  </div>
-                ) : siteStatus === "setting_up" ? (
-                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                    <Loader2 className="h-4 w-4 mt-0.5 animate-spin" />
-                    <div>
-                      <div className="font-medium">DNS verified — Site setting up</div>
-                      <div className="text-xs mt-1">{siteMessage ?? "Cloudflare is still attaching your domain. This usually clears within a few minutes."}</div>
-                      <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => runVerify(false)} disabled={verifying}>
-                        {verifying ? "Checking…" : "Check again"}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>DNS verified for <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
-                  </div>
-                )}
+              <p className="text-xs text-muted-foreground">
+                If this domain still fails in the browser, finish the domain connection in Project Settings → Domains and wait for SSL to become Active.
+              </p>
               </div>
-            )}
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-destructive/30 bg-card p-6 space-y-4 shadow-sm">
+        <div>
+          <Label className="text-base text-destructive">Danger zone</Label>
+          <p className="mt-1 text-xs text-muted-foreground">Delete this store permanently, including products, orders, categories, reviews, messages, and settings.</p>
+        </div>
+        <Button type="button" variant="destructive" onClick={deleteStore}>
+          <Trash2 className="mr-2 h-4 w-4" /> Delete store
+        </Button>
       </div>
 
       <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
