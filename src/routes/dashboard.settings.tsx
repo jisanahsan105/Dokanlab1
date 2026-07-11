@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Trash2, Copy, RefreshCw, XCircle, Loader2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Trash2, Copy, RefreshCw, XCircle, Loader2, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
 
@@ -586,5 +586,18 @@ function SettingsPage() {
 
       <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
     </form>
+  );
+}
+
+function DnsRow({ type, host, value, onCopy }: { type: string; host: string; value: string; onCopy: (t: string) => void }) {
+  return (
+    <div className="grid grid-cols-[60px_1fr_1fr_auto] items-center gap-2 rounded-lg border border-border bg-muted/20 p-2 text-xs">
+      <span className="rounded bg-primary/10 px-2 py-1 text-center font-mono font-semibold text-primary">{type}</span>
+      <span className="font-mono truncate">{host}</span>
+      <span className="font-mono truncate">{value}</span>
+      <Button type="button" variant="ghost" size="sm" onClick={() => onCopy(value)}>
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+    </div>
   );
 }
