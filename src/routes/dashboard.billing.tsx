@@ -113,14 +113,14 @@ function BillingPage() {
           <div>
             <p className="text-sm text-muted-foreground">Current plan</p>
             <p className="text-lg font-semibold">
-              {profile?.subscription_plan === "done_for_you" ? "Done-For-You" : profile?.subscription_plan === "self_serve" ? "Self-Serve" : "Trial"}
+              {profile?.subscription_plan === "done_for_you" ? "Done-For-You" : profile?.subscription_plan === "self_serve" ? "Self-Serve" : "Not selected"}
             </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Status</p>
-            {profile?.subscription_status === "active" && daysLeft > 0
+            {daysLeft > 0
               ? <Badge className="bg-emerald-500/15 text-emerald-700">Active · {daysLeft} days left</Badge>
-              : <Badge variant="secondary">{profile?.subscription_status ?? "trial"}</Badge>}
+              : <Badge variant="destructive">Expired — store deactivated</Badge>}
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Valid until</p>
