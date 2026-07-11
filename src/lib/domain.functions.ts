@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type DohAnswer = { name: string; type: number; TTL: number; data: string };
 type DohResp = { Status: number; Answer?: DohAnswer[] };
@@ -36,8 +37,9 @@ async function doh(name: string, type: "A" | "TXT"): Promise<DohAnswer[]> {
 }
 
 export const verifyDomainDns = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { domain: string; token: string }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const domain = normalizeDomain(data.domain);
     const checkedAt = new Date().toISOString();
     const checks: DomainCheck[] = [];
@@ -53,6 +55,55 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
         checkedAt,
       });
       return { ok: false, error: "Invalid domain format", checks } as const;
+    }
+
+    // Ownership check: caller must own a store whose custom_domain matches, and
+    // the stored verification token for that store must match the one supplied.
+    const { data: owned, error: ownErr } = await context.supabase
+      .from("stores")
+      .select("id, custom_domain, owner_id, store_domain_verifications(token)")
+      .eq("owner_id", context.userId)
+      .eq("custom_domain", domain)
+      .maybeSingle();
+    if (ownErr || !owned) {
+      return {
+        ok: false,
+        error: "You can only verify a domain attached to a store you own.",
+        checks: [
+          {
+            key: "ownership",
+            type: "DOMAIN",
+            host: domain,
+            expected: "You own a store with this custom domain",
+            found: "no matching store",
+            status: "error",
+            message: "Ownership check failed",
+            checkedAt,
+          },
+        ],
+      } as const;
+    }
+    const storedToken = (owned as any)?.store_domain_verifications?.token
+      ?? (Array.isArray((owned as any)?.store_domain_verifications)
+        ? (owned as any).store_domain_verifications[0]?.token
+        : null);
+    if (!storedToken || storedToken !== data.token) {
+      return {
+        ok: false,
+        error: "Verification token mismatch — reconnect the domain and try again.",
+        checks: [
+          {
+            key: "ownership-token",
+            type: "DOMAIN",
+            host: domain,
+            expected: "Matching stored verification token",
+            found: "mismatch",
+            status: "error",
+            message: "Ownership token check failed",
+            checkedAt,
+          },
+        ],
+      } as const;
     }
 
     // Check TXT record _lovable-verify.<domain>
