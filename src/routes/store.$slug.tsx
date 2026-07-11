@@ -616,10 +616,15 @@ function CatBtn({ active, onClick, label }: { active: boolean; onClick: () => vo
 }
 
 function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
-  // BDStall-inspired bold colored footer. Yellow for physical, deep navy for digital.
-  const palette = isDigital
-    ? { bg: "#0B1020", text: "#EEF2FF", muted: "rgba(238,242,255,0.72)", accent: "#22D3EE", divider: "rgba(255,255,255,0.12)" }
-    : { bg: "#FFC107", text: "#1A1A1A", muted: "rgba(26,26,26,0.78)", accent: "#E53935", divider: "rgba(0,0,0,0.12)" };
+  // Modern clean footer — dark slate with mint/sky accents, matches Fresh Mint & Sky theme.
+  const palette = {
+    bg: "#0B1220",
+    surface: "rgba(255,255,255,0.04)",
+    text: "#F1F5F9",
+    muted: "rgba(241,245,249,0.62)",
+    accent: "var(--sf-primary)",
+    divider: "rgba(255,255,255,0.08)",
+  };
 
   const links = [
     { label: "About Us", href: store.footer_about_url },
@@ -629,90 +634,137 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
   ].filter(l => l.href);
 
   return (
-    <footer className="mt-12" style={{ background: palette.bg, color: palette.text }}>
-      <div className="container mx-auto grid gap-10 px-4 py-12 md:grid-cols-3">
-        {/* Brand + contact */}
-        <div className="space-y-4">
-          {store.logo_url
-            ? <img src={store.logo_url} alt={store.name} className="h-12 w-auto max-w-[180px] object-contain" />
-            : <div className="text-2xl font-extrabold tracking-tight">{store.name}</div>}
-          <ul className="space-y-3 text-sm">
-            {store.footer_address && (
-              <li className="flex gap-2.5"><MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} /><span style={{ color: palette.muted }}>{store.footer_address}</span></li>
-            )}
-            {store.footer_email && (
-              <li className="flex items-center gap-2.5"><Mail className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
-                <a href={`mailto:${store.footer_email}`} className="hover:underline" style={{ color: palette.muted }}>{store.footer_email}</a></li>
-            )}
-            {store.footer_phone && (
-              <li className="flex items-center gap-2.5"><Phone className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
-                <a href={`tel:${store.footer_phone}`} className="hover:underline" style={{ color: palette.muted }}>{store.footer_phone}</a></li>
-            )}
-          </ul>
-        </div>
-
-        {/* Information links */}
-        {links.length > 0 && (
+    <footer className="mt-16" style={{ background: palette.bg, color: palette.text }}>
+      {/* Newsletter band */}
+      <div className="relative overflow-hidden border-b" style={{ borderColor: palette.divider }}>
+        <div className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{ background: "radial-gradient(600px 200px at 15% 50%, rgba(16,185,129,0.35), transparent), radial-gradient(600px 200px at 85% 50%, rgba(14,165,233,0.30), transparent)" }} />
+        <div className="container relative mx-auto grid gap-6 px-4 py-10 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <h3 className="text-lg font-bold">Information</h3>
-            <div className="mt-1 h-0.5 w-10 rounded-full" style={{ background: palette.accent }} />
-            <ul className="mt-5 space-y-3 text-sm">
-              {links.map(l => (
-                <li key={l.label}>
-                  <a href={l.href} target="_blank" rel="noreferrer" className="transition hover:underline" style={{ color: palette.muted }}>
-                    {l.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <h3 className="text-xl font-bold tracking-tight md:text-2xl">Stay in the loop</h3>
+            <p className="mt-1 text-sm" style={{ color: palette.muted }}>
+              Get exclusive offers & new arrivals in your inbox.
+            </p>
           </div>
-        )}
-
-        {/* Subscribe + apps */}
-        <div>
-          <h3 className="text-lg font-bold">Subscribe</h3>
-          <div className="mt-1 h-0.5 w-10 rounded-full" style={{ background: palette.accent }} />
-          <p className="mt-5 text-sm" style={{ color: palette.muted }}>Write your email to subscribe:</p>
-          <form onSubmit={(e) => e.preventDefault()} className="mt-3 flex overflow-hidden rounded-md" style={{ border: `1px solid ${palette.divider}`, background: isDigital ? "rgba(255,255,255,0.06)" : "#fff" }}>
-            <input type="email" placeholder="Your Email"
-              className="flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:opacity-60"
-              style={{ color: isDigital ? "#fff" : "#1A1A1A" }} />
-            <button type="submit" aria-label="Subscribe"
-              className="grid w-12 place-items-center text-white transition hover:opacity-90"
-              style={{ background: palette.accent }}><Send className="h-4 w-4" /></button>
+          <form onSubmit={(e) => e.preventDefault()}
+            className="flex w-full overflow-hidden rounded-full md:w-auto"
+            style={{ background: "rgba(255,255,255,0.08)", border: `1px solid ${palette.divider}` }}>
+            <input type="email" placeholder="Your email address"
+              className="min-w-0 flex-1 bg-transparent px-5 py-3 text-sm outline-none placeholder:text-white/40 md:w-80"
+              style={{ color: palette.text }} />
+            <button type="submit"
+              className="inline-flex items-center gap-1.5 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              style={{ background: "var(--sf-hero)" }}>
+              <Send className="h-4 w-4" /> Subscribe
+            </button>
           </form>
-
-          {(store.footer_playstore_url || store.footer_appstore_url || store.footer_facebook_url) && (
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              {store.footer_playstore_url && (
-                <a href={store.footer_playstore_url} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90">
-                  <span className="text-base">▶</span>
-                  <span><span className="block text-[9px] font-normal opacity-80">ANDROID APP ON</span>Google Play</span>
-                </a>
-              )}
-              {store.footer_appstore_url && (
-                <a href={store.footer_appstore_url} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90">
-                  <span className="text-base"></span>
-                  <span><span className="block text-[9px] font-normal opacity-80">Download on the</span>App Store</span>
-                </a>
-              )}
-              {store.footer_facebook_url && (
-                <a href={store.footer_facebook_url} target="_blank" rel="noreferrer" aria-label="Facebook"
-                  className="grid h-9 w-9 place-items-center rounded-full transition hover:scale-110"
-                  style={{ background: palette.accent, color: "#fff" }}>
-                  <Facebook className="h-4 w-4" />
-                </a>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
+      {/* Main columns */}
+      <div className="container mx-auto grid gap-10 px-4 py-14 md:grid-cols-4">
+        {/* Brand + contact */}
+        <div className="md:col-span-2 space-y-4">
+          <div className="flex items-center gap-3">
+            {store.logo_url
+              ? <img src={store.logo_url} alt={store.name} className="h-10 w-auto max-w-[160px] object-contain" />
+              : <>
+                  <div className="grid h-10 w-10 place-items-center rounded-xl text-white" style={{ background: "var(--sf-hero)" }}>
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <div className="text-2xl font-extrabold tracking-tight">{store.name}</div>
+                </>}
+          </div>
+          {store.bio && (
+            <p className="max-w-md text-sm leading-relaxed" style={{ color: palette.muted }}>{store.bio}</p>
+          )}
+          <ul className="space-y-2.5 text-sm">
+            {store.footer_address && (
+              <li className="flex gap-2.5">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                <span style={{ color: palette.muted }}>{store.footer_address}</span>
+              </li>
+            )}
+            {store.footer_email && (
+              <li className="flex items-center gap-2.5">
+                <Mail className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                <a href={`mailto:${store.footer_email}`} className="transition hover:text-white" style={{ color: palette.muted }}>{store.footer_email}</a>
+              </li>
+            )}
+            {store.footer_phone && (
+              <li className="flex items-center gap-2.5">
+                <Phone className="h-4 w-4 shrink-0" style={{ color: palette.accent }} />
+                <a href={`tel:${store.footer_phone}`} className="transition hover:text-white" style={{ color: palette.muted }}>{store.footer_phone}</a>
+              </li>
+            )}
+          </ul>
+          {store.footer_facebook_url && (
+            <div className="flex items-center gap-2 pt-1">
+              <a href={store.footer_facebook_url} target="_blank" rel="noreferrer" aria-label="Facebook"
+                className="grid h-9 w-9 place-items-center rounded-full transition hover:scale-110 hover:text-white"
+                style={{ background: palette.surface, color: palette.muted, border: `1px solid ${palette.divider}` }}>
+                <Facebook className="h-4 w-4" />
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Information links */}
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: palette.text }}>Information</h3>
+          <div className="mt-2 h-0.5 w-8 rounded-full" style={{ background: palette.accent }} />
+          <ul className="mt-5 space-y-3 text-sm">
+            {(links.length > 0 ? links : [{ label: "About Us", href: "#" }, { label: "Facebook Page", href: "#" }]).map(l => (
+              <li key={l.label}>
+                <a href={l.href} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 transition hover:text-white"
+                  style={{ color: palette.muted }}>
+                  <ChevronRight className="h-3 w-3 opacity-60" /> {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Apps / help */}
+        <div>
+          <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: palette.text }}>Shop with us</h3>
+          <div className="mt-2 h-0.5 w-8 rounded-full" style={{ background: palette.accent }} />
+          <div className="mt-5 flex flex-col gap-2.5">
+            {store.footer_playstore_url && (
+              <a href={store.footer_playstore_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${palette.divider}` }}>
+                <span className="text-base">▶</span>
+                <span><span className="block text-[9px] font-normal opacity-70">ANDROID APP ON</span>Google Play</span>
+              </a>
+            )}
+            {store.footer_appstore_url && (
+              <a href={store.footer_appstore_url} target="_blank" rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-white transition hover:opacity-90"
+                style={{ background: "rgba(255,255,255,0.06)", border: `1px solid ${palette.divider}` }}>
+                <span className="text-base"></span>
+                <span><span className="block text-[9px] font-normal opacity-70">Download on the</span>App Store</span>
+              </a>
+            )}
+            {!store.footer_playstore_url && !store.footer_appstore_url && (
+              <p className="text-sm" style={{ color: palette.muted }}>
+                Fast delivery, cash on delivery, and 24/7 support across Bangladesh.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom bar */}
       <div className="border-t" style={{ borderColor: palette.divider }}>
-        <div className="container mx-auto px-4 py-4 text-center text-xs" style={{ color: palette.muted }}>
-          {store.footer_copyright?.trim() || `${store.name} © All rights reserved. ${new Date().getFullYear()}`}
+        <div className="container mx-auto flex flex-col items-center justify-between gap-2 px-4 py-5 text-xs md:flex-row"
+          style={{ color: palette.muted }}>
+          <div>{store.footer_copyright?.trim() || `© ${new Date().getFullYear()} ${store.name}. All rights reserved.`}</div>
+          <div className="flex items-center gap-1.5">
+            Powered by
+            <span className="font-semibold text-white">DokanLab</span>
+          </div>
         </div>
       </div>
     </footer>
