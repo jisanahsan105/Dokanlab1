@@ -167,16 +167,16 @@ function StoreHome({ slug }: { slug: string }) {
         ["--sf-hero" as any]: "linear-gradient(135deg, #0B1020 0%, #1E1B4B 50%, #312E81 100%)",
       }
     : {
-        ["--sf-bg" as any]: "#F8FAFC",
+        ["--sf-bg" as any]: "#FFFFFF",
         ["--sf-surface" as any]: "#FFFFFF",
-        ["--sf-surface-2" as any]: "#F1F5F9",
+        ["--sf-surface-2" as any]: "#F0FDF4",
         ["--sf-text" as any]: "#0F172A",
         ["--sf-muted" as any]: "#64748B",
         ["--sf-border" as any]: "rgba(15,23,42,0.08)",
-        ["--sf-primary" as any]: "#059669",
-        ["--sf-primary-2" as any]: "#10B981",
-        ["--sf-accent" as any]: "#F59E0B",
-        ["--sf-hero" as any]: "linear-gradient(135deg, #064E3B 0%, #059669 60%, #10B981 100%)",
+        ["--sf-primary" as any]: "#10B981",
+        ["--sf-primary-2" as any]: "#0EA5E9",
+        ["--sf-accent" as any]: "#0EA5E9",
+        ["--sf-hero" as any]: "linear-gradient(135deg, #10B981 0%, #06B6D4 55%, #0EA5E9 100%)",
       };
 
   return (
