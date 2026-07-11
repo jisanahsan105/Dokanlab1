@@ -2,13 +2,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStore } from "@/lib/use-my-store";
-import { Package, ShoppingCart, DollarSign } from "lucide-react";
+import { Package, ShoppingCart, DollarSign, MessageCircle, Users, Wallet } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/")({ component: Overview });
 
 function Overview() {
   const { store } = useMyStore();
   const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0 });
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", auth.user.id).eq("role", "super_admin");
+      setIsAdmin(!!data && data.length > 0);
+    })();
+  }, []);
   useEffect(() => {
     if (!store) return;
     (async () => {
@@ -24,6 +34,33 @@ function Overview() {
       });
     })();
   }, [store]);
+
+  if (!store && isAdmin) {
+    const adminCards = [
+      { label: "Users", desc: "Approve or block access", icon: Users, to: "/dashboard/users" as const },
+      { label: "Payments", desc: "Review payments and update package prices", icon: Wallet, to: "/dashboard/payments" as const },
+      { label: "Messages", desc: "Read customer messages", icon: MessageCircle, to: "/dashboard/messages" as const },
+    ];
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Super admin dashboard</h1>
+          <p className="text-sm text-muted-foreground">Manage users, payments, prices, and storefront messages.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {adminCards.map((c) => (
+            <Link key={c.label} to={c.to} className="rounded-2xl border border-border bg-card p-6 shadow-sm transition hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold">{c.label}</span>
+                <c.icon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{c.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!store) return null;
   const cards = [
