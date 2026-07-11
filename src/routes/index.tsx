@@ -50,7 +50,7 @@ function Index() {
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login"><Button variant="ghost" size="sm">Login</Button></Link>
-            <Link to="/signup"><Button size="sm" className="rounded-full shadow-sm">Start free</Button></Link>
+            <Link to="/signup"><Button size="sm" className="rounded-full shadow-sm">Get started</Button></Link>
           </div>
         </div>
       </header>
@@ -68,7 +68,7 @@ function Index() {
         <div className="container mx-auto grid items-center gap-12 px-4 py-20 md:grid-cols-2 md:py-28">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card px-3 py-1.5 text-xs font-semibold text-primary shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" /> The Shopify of Bangladesh
+              <Sparkles className="h-3.5 w-3.5" /> Made for Bangladeshi entrepreneurs
             </span>
             <h1 className="mt-6 font-display text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
               Launch your online store —{" "}
@@ -82,7 +82,7 @@ function Index() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link to="/signup">
                 <Button size="lg" className="rounded-full px-7 shadow-lg">
-                  Start your store — Free <ArrowRight className="ml-1 h-4 w-4" />
+                  Start your store <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/store/$slug" params={{ slug: "ghorerbazar" }}>
@@ -90,7 +90,7 @@ function Index() {
               </Link>
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-              {["No credit card", "Live in 5 minutes", "বাংলা + English"].map((x) => (
+              {["সহজ setup", "Live in 5 minutes", "বাংলা + English"].map((x) => (
                 <span key={x} className="inline-flex items-center gap-1.5">
                   <Check className="h-4 w-4 text-primary" /> {x}
                 </span>
@@ -277,7 +277,7 @@ function Index() {
           <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(600px 300px at 20% 20%, rgba(255,255,255,0.4), transparent), radial-gradient(500px 300px at 80% 80%, rgba(255,255,255,0.25), transparent)" }} />
           <div className="relative">
             <h2 className="font-display text-3xl font-bold md:text-5xl">Start selling online today.</h2>
-            <p className="mx-auto mt-4 max-w-xl text-white/85">Free to start. No credit card required. Cancel anytime.</p>
+            <p className="mx-auto mt-4 max-w-xl text-white/85">সহজ সেটআপ। বাংলায় সাপোর্ট। যেকোনো সময় ক্যানসেল করুন।</p>
             <div className="mt-8">
               <Link to="/signup">
                 <Button size="lg" className="rounded-full bg-white px-8 font-semibold text-primary hover:bg-white/90">

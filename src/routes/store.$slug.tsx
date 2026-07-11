@@ -52,6 +52,7 @@ function StoreHome({ slug }: { slug: string }) {
   const [query, setQuery] = useState("");
   const [priceMax, setPriceMax] = useState<number | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [deactivated, setDeactivated] = useState(false);
   const cart = useCart(slug);
   const t = T[lang];
 
@@ -63,6 +64,9 @@ function StoreHome({ slug }: { slug: string }) {
     (async () => {
       const { data: s } = await supabase.from("stores").select("*").eq("slug", slug).maybeSingle();
       if (!s) { setNotFound(true); return; }
+      // Check subscription status via SECURITY DEFINER RPC
+      const { data: active } = await supabase.rpc("is_store_active", { _store_id: s.id });
+      if (active === false) { setStore(s); setDeactivated(true); return; }
       setStore(s);
       const { data: p } = await supabase.from("products").select("*")
         .eq("store_id", s.id).eq("active", true).order("created_at", { ascending: false });
@@ -144,6 +148,16 @@ function StoreHome({ slug }: { slug: string }) {
   }, [products]);
 
   if (notFound) return <div className="grid min-h-screen place-items-center text-muted-foreground">Store not found.</div>;
+  if (deactivated) return (
+    <div className="grid min-h-screen place-items-center px-6 text-center">
+      <div className="max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
+        <h1 className="text-2xl font-bold">{store?.name ?? "Store"} temporarily unavailable</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          এই স্টোরটির সাবস্ক্রিপশন শেষ হয়ে গেছে। মালিকের পেমেন্ট আপডেট হলে স্টোরটি আবার সচল হবে।
+        </p>
+      </div>
+    </div>
+  );
   if (!store) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
 
   // Theme palette via scoped CSS vars

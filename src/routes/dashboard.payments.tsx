@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Clock, Save, ShieldOff, ExternalLink } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Save, ShieldOff, ExternalLink, CalendarPlus, Search } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/payments")({ component: PaymentsAdmin });
 
@@ -32,6 +32,9 @@ function PaymentsAdmin() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [reviewRow, setReviewRow] = useState<Row | null>(null);
   const [adminNote, setAdminNote] = useState("");
+  const [subs, setSubs] = useState<any[]>([]);
+  const [subQuery, setSubQuery] = useState("");
+  const [extendingId, setExtendingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -46,16 +49,32 @@ function PaymentsAdmin() {
   }, [user, authLoading, navigate]);
 
   const refresh = async () => {
-    const [{ data: pays }, { data: prof }, { data: s }] = await Promise.all([
+    const [{ data: pays }, { data: prof }, { data: s }, { data: allProf }] = await Promise.all([
       supabase.from("subscription_payments").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, email, display_name"),
       supabase.from("admin_payment_settings").select("*").eq("id", "default").maybeSingle(),
+      supabase.from("profiles").select("id, email, display_name, subscription_plan, subscription_valid_until, subscription_status, access_status").order("subscription_valid_until", { ascending: true, nullsFirst: false }),
     ]);
     const map: Record<string, any> = {};
     (prof ?? []).forEach((p: any) => { map[p.id] = { email: p.email, display_name: p.display_name }; });
     setEmails(map);
     setRows((pays ?? []) as Row[]);
     setSettings(s);
+    setSubs(allProf ?? []);
+  };
+
+  const extendMonth = async (uid: string, currentValid: string | null) => {
+    setExtendingId(uid);
+    const base = currentValid && new Date(currentValid).getTime() > Date.now() ? new Date(currentValid) : new Date();
+    const next = new Date(base.getTime() + 30 * 86400000);
+    const { error } = await supabase.from("profiles").update({
+      subscription_valid_until: next.toISOString(),
+      subscription_status: "active",
+    }).eq("id", uid);
+    setExtendingId(null);
+    if (error) return toast.error(error.message);
+    toast.success("Extended by 30 days");
+    await refresh();
   };
 
   const saveSettings = async () => {
@@ -99,6 +118,11 @@ function PaymentsAdmin() {
 
   const filtered = tab === "all" ? rows : rows.filter((r) => r.status === tab);
   const counts = { pending: rows.filter((r) => r.status === "pending").length, approved: rows.filter((r) => r.status === "approved").length, rejected: rows.filter((r) => r.status === "rejected").length };
+  const subFiltered = subs.filter((p) => {
+    const q = subQuery.trim().toLowerCase();
+    if (!q) return true;
+    return [p.email, p.display_name].filter(Boolean).some((v: string) => v.toLowerCase().includes(q));
+  });
 
   return (
     <div className="space-y-6">
@@ -134,6 +158,62 @@ function PaymentsAdmin() {
           <div className="mt-4"><Button onClick={saveSettings} disabled={savingSettings}><Save className="mr-2 h-4 w-4" /> {savingSettings ? "Saving…" : "Save settings"}</Button></div>
         </div>
       )}
+
+      {/* Subscriptions manager */}
+      <div className="rounded-2xl border border-border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+          <div>
+            <h2 className="font-semibold">Subscriptions</h2>
+            <p className="text-xs text-muted-foreground">Extend a user's access by 30 days when they send an extra payment.</p>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-border px-3 py-1">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input value={subQuery} onChange={(e) => setSubQuery(e.target.value)} placeholder="Search user…" className="w-48 bg-transparent text-sm outline-none" />
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border bg-muted/30 text-left text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">User</th>
+                <th className="px-4 py-3">Plan</th>
+                <th className="px-4 py-3">Valid until</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subFiltered.map((p) => {
+                const validUntil = p.subscription_valid_until ? new Date(p.subscription_valid_until) : null;
+                const daysLeft = validUntil ? Math.ceil((validUntil.getTime() - Date.now()) / 86400000) : 0;
+                const active = validUntil && validUntil.getTime() > Date.now();
+                return (
+                  <tr key={p.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{p.display_name || "—"}</div>
+                      <div className="text-xs text-muted-foreground">{p.email}</div>
+                    </td>
+                    <td className="px-4 py-3 capitalize">{(p.subscription_plan ?? "—").replace("_", " ")}</td>
+                    <td className="px-4 py-3">
+                      {validUntil ? validUntil.toLocaleDateString() : "—"}
+                      {validUntil && <div className={`text-xs ${active ? "text-muted-foreground" : "text-destructive"}`}>{active ? `${daysLeft} days left` : `Expired ${Math.abs(daysLeft)}d ago`}</div>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {active ? <Badge className="bg-emerald-500/15 text-emerald-700">Active</Badge> : <Badge variant="destructive">Expired</Badge>}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button size="sm" onClick={() => extendMonth(p.id, p.subscription_valid_until)} disabled={extendingId === p.id}>
+                        <CalendarPlus className="mr-1 h-4 w-4" /> {extendingId === p.id ? "Extending…" : "+1 month"}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {subFiltered.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No users.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       {/* Submissions */}
       <div className="rounded-2xl border border-border bg-card">
