@@ -673,7 +673,17 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
     { label: "Facebook Page", href: store.footer_facebook_url },
     { label: "Terms & Condition", href: store.footer_terms_url, text: store.footer_terms_text },
     { label: "Warranty Policy", href: store.footer_warranty_url, text: store.footer_warranty_text },
+    { label: "Return & Refund", href: store.footer_return_url, text: store.footer_return_text },
+    { label: "Privacy Policy", href: store.footer_privacy_url, text: store.footer_privacy_text },
   ].filter(l => (l.text && l.text.trim()) || l.href);
+
+  const socials: Array<{ href?: string; label: string; Icon: any }> = [
+    { href: store.footer_facebook_url, label: "Facebook", Icon: Facebook },
+    { href: store.instagram_url, label: "Instagram", Icon: Instagram },
+    { href: store.youtube_url, label: "YouTube", Icon: Youtube },
+    { href: store.tiktok_url, label: "TikTok", Icon: Music2 },
+    { href: store.whatsapp_channel_url, label: "WhatsApp", Icon: Send },
+  ].filter(s => s.href);
 
   return (
     <>
