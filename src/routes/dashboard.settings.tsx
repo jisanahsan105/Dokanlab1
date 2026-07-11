@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { verifyDomainDns } from "@/lib/domain.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStore } from "@/lib/use-my-store";
 import { Button } from "@/components/ui/button";
@@ -8,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Trash2, Copy, RefreshCw, XCircle, Loader2, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
 
@@ -20,6 +22,9 @@ function SettingsPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [domainInput, setDomainInput] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [checks, setChecks] = useState<any[]>([]);
+  const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
   useEffect(() => { if (store?.custom_domain) setDomainInput(store.custom_domain); }, [store]);
@@ -47,20 +52,45 @@ function SettingsPage() {
   const connectDomain = async () => {
     const clean = domainInput.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
     if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(clean)) return toast.error("Enter a valid domain (e.g. shop.example.com)");
+    const token = `lovable-verify=${crypto.randomUUID().replace(/-/g, "")}`;
     const { error } = await supabase.from("stores").update({
       custom_domain: clean,
-      domain_verification_token: null,
-      domain_verified: true,
-      domain_last_checked_at: new Date().toISOString(),
+      domain_verification_token: token,
+      domain_verified: false,
+      domain_last_checked_at: null,
       domain_last_check_error: null,
-      site_status: "live",
-      site_status_message: "Routing saved after domain setup in Lovable",
-      site_status_checked_at: new Date().toISOString(),
     }).eq("id", form.id);
     if (error) return toast.error(error.message);
-    toast.success("Domain routing saved for this store");
+    toast.success("Domain saved — now add the DNS records below and verify");
+    setChecks([]);
     reload();
   };
+
+  const verifyDomain = async () => {
+    if (!form.custom_domain || !form.domain_verification_token) return;
+    setVerifying(true);
+    try {
+      const res: any = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
+      setChecks(res.checks ?? []);
+      await supabase.from("stores").update({
+        domain_verified: !!res.ok,
+        domain_last_checked_at: new Date().toISOString(),
+        domain_last_check_error: res.ok ? null : (res.error ?? "Verification failed"),
+        site_status: res.ok ? (res.siteStatus ?? "live") : null,
+        site_status_message: res.ok ? (res.siteMessage ?? null) : null,
+        site_status_checked_at: new Date().toISOString(),
+      }).eq("id", form.id);
+      if (res.ok) toast.success("Domain verified!");
+      else toast.error(res.error ?? "Verification failed");
+      reload();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Verification failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const copy = (text: string) => { navigator.clipboard.writeText(text); toast.success("Copied"); };
 
   const disconnectDomain = async () => {
     const { error } = await supabase.from("stores").update({
@@ -476,46 +506,70 @@ function SettingsPage() {
           <Globe className="h-5 w-5 text-primary" />
           <Label className="text-base">Custom Domain</Label>
         </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <div className="font-semibold">Complete the Lovable domain setup first</div>
-              <p className="mt-1 text-xs leading-relaxed">
-                Domain SSL and hosting must be connected from Project Settings → Domains. After it becomes Active there, save the same domain below so this store opens on that domain.
-              </p>
-              <a href="https://docs.lovable.dev/features/custom-domain" target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold underline">
-                Custom domain setup guide <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Connect your own domain (e.g. <span className="font-mono">shop.example.com</span>). Add the DNS records shown after you save, then click Verify. SSL is set up automatically once verified.
+        </p>
 
         {!form.custom_domain ? (
           <div className="flex gap-2">
             <Input placeholder="shop.example.com" value={domainInput} onChange={(e) => setDomainInput(e.target.value)} />
-            <Button type="button" onClick={connectDomain}>Connect</Button>
+            <Button type="button" onClick={connectDomain}>Save & get DNS</Button>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
               <div className="flex items-center gap-2">
                 <span className="font-medium">{form.custom_domain}</span>
-                <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                  <CheckCircle2 className="h-3 w-3" /> Saved
-                </span>
+                {form.domain_verified ? (
+                  <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3 w-3" /> Verified
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                    <Clock className="h-3 w-3" /> Pending verification
+                  </span>
+                )}
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={disconnectDomain}>Disconnect</Button>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" onClick={verifyDomain} disabled={verifying}>
+                  {verifying ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="mr-1 h-3.5 w-3.5" />}
+                  Verify DNS
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={disconnectDomain}>Disconnect</Button>
+              </div>
             </div>
-            <div className="space-y-2">
+
+            {/* DNS record instructions */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Add these records at your DNS provider</p>
+              <DnsRow type="A" host="@" value="185.158.133.1" onCopy={copy} />
+              <DnsRow type="A" host="www" value="185.158.133.1" onCopy={copy} />
+              <DnsRow type="TXT" host={`_lovable-verify.${form.custom_domain}`} value={form.domain_verification_token ?? ""} onCopy={copy} />
+              <p className="text-xs text-muted-foreground">DNS changes can take a few minutes to a few hours to propagate.</p>
+            </div>
+
+            {form.domain_verified && (
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
                 <CheckCircle2 className="h-4 w-4" />
-                <span>Store routing saved for <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
+                <span>Live at <a className="underline font-medium" href={`https://${form.custom_domain}`} target="_blank" rel="noreferrer">{form.custom_domain}</a></span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                If this domain still fails in the browser, finish the domain connection in Project Settings → Domains and wait for SSL to become Active.
-              </p>
+            )}
+
+            {checks.length > 0 && (
+              <div className="space-y-1 rounded-lg border border-border p-3 text-xs">
+                {checks.map((c) => (
+                  <div key={c.key} className="flex items-start gap-2">
+                    {c.status === "success" ? <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-emerald-600" /> :
+                     c.status === "warning" ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 text-amber-600" /> :
+                     <XCircle className="mt-0.5 h-3.5 w-3.5 text-destructive" />}
+                    <div className="flex-1">
+                      <div className="font-medium"><span className="mr-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{c.type}</span>{c.host}</div>
+                      <div className="text-muted-foreground">{c.message}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
+            )}
           </div>
         )}
       </div>
@@ -532,5 +586,18 @@ function SettingsPage() {
 
       <Button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button>
     </form>
+  );
+}
+
+function DnsRow({ type, host, value, onCopy }: { type: string; host: string; value: string; onCopy: (t: string) => void }) {
+  return (
+    <div className="grid grid-cols-[60px_1fr_1fr_auto] items-center gap-2 rounded-lg border border-border bg-muted/20 p-2 text-xs">
+      <span className="rounded bg-primary/10 px-2 py-1 text-center font-mono font-semibold text-primary">{type}</span>
+      <span className="font-mono truncate">{host}</span>
+      <span className="font-mono truncate">{value}</span>
+      <Button type="button" variant="ghost" size="sm" onClick={() => onCopy(value)}>
+        <Copy className="h-3.5 w-3.5" />
+      </Button>
+    </div>
   );
 }

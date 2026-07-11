@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { deleteUserAsAdmin } from "@/lib/admin-users.functions";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Search, ShieldCheck, ShieldOff, UserCheck, Ban, Clock } from "lucide-react";
+import { Search, ShieldCheck, ShieldOff, UserCheck, Ban, Clock, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/users")({ component: UsersPage });
 
@@ -21,11 +23,13 @@ type Profile = {
 function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const deleteUserFn = useServerFn(deleteUserAsAdmin);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roleMap, setRoleMap] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -60,6 +64,23 @@ function UsersPage() {
     if (error) return toast.error(error.message);
     toast.success(`User ${status}`);
     setProfiles((prev) => prev.map((p) => (p.id === id ? { ...p, access_status: status } : p)));
+  };
+
+  const deleteUser = async (p: Profile) => {
+    const label = p.email || p.display_name || "this user";
+    if (!confirm(`Permanently delete ${label}? They will need to sign up again with a new account.`)) return;
+    const typed = prompt(`Type DELETE to confirm removing ${label}`);
+    if (typed !== "DELETE") return toast.error("Deletion cancelled");
+    setDeletingId(p.id);
+    try {
+      await deleteUserFn({ data: { userId: p.id } });
+      toast.success("User deleted");
+      setProfiles((prev) => prev.filter((x) => x.id !== p.id));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to delete user");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (authLoading || isAdmin === null || loading) {
@@ -169,6 +190,9 @@ function UsersPage() {
                                 <Ban className="mr-1 h-3.5 w-3.5" /> Block
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => deleteUser(p)} disabled={deletingId === p.id}>
+                              <Trash2 className="mr-1 h-3.5 w-3.5" /> {deletingId === p.id ? "Deleting…" : "Delete"}
+                            </Button>
                           </>
                         )}
                       </div>
