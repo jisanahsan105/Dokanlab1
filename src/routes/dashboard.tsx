@@ -78,6 +78,15 @@ function DashboardLayout() {
     return () => { supabase.removeChannel(ch); };
   }, [user, isAdmin, accessStatus]);
 
+  // Pending users: force them into the Billing page so they can submit payment.
+  const isPending = !isAdmin && accessStatus === "pending";
+  useEffect(() => {
+    if (checking) return;
+    if (isPending && !loc.pathname.startsWith("/dashboard/billing") && !loc.pathname.startsWith("/dashboard/messages")) {
+      navigate({ to: "/dashboard/billing", replace: true } as any);
+    }
+  }, [checking, isPending, loc.pathname, navigate]);
+
   if (loading || checking) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
   }
@@ -85,14 +94,6 @@ function DashboardLayout() {
   if (!isAdmin && accessStatus === "blocked") {
     return <BlockedGate onSignOut={() => { signOut(); navigate({ to: "/" }); }} />;
   }
-
-  // Pending users: force them into the Billing page so they can submit payment.
-  const isPending = !isAdmin && accessStatus === "pending";
-  useEffect(() => {
-    if (isPending && !loc.pathname.startsWith("/dashboard/billing") && !loc.pathname.startsWith("/dashboard/messages")) {
-      navigate({ to: "/dashboard/billing", replace: true } as any);
-    }
-  }, [isPending, loc.pathname, navigate]);
 
   const nav = [
     ...(isPending ? [
