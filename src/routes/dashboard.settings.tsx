@@ -24,10 +24,22 @@ function SettingsPage() {
   const [domainInput, setDomainInput] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [checks, setChecks] = useState<any[]>([]);
+  const [domainToken, setDomainToken] = useState<string | null>(null);
   const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
   useEffect(() => { if (store?.custom_domain) setDomainInput(store.custom_domain); }, [store]);
+  useEffect(() => {
+    if (!store?.id) { setDomainToken(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("store_domain_verifications")
+        .select("token")
+        .eq("store_id", store.id)
+        .maybeSingle();
+      setDomainToken((data as any)?.token ?? null);
+    })();
+  }, [store?.id, store?.custom_domain]);
 
   if (!form) return null;
 
@@ -55,22 +67,26 @@ function SettingsPage() {
     const token = `lovable-verify=${crypto.randomUUID().replace(/-/g, "")}`;
     const { error } = await supabase.from("stores").update({
       custom_domain: clean,
-      domain_verification_token: token,
       domain_verified: false,
       domain_last_checked_at: null,
       domain_last_check_error: null,
     }).eq("id", form.id);
     if (error) return toast.error(error.message);
+    const { error: tErr } = await supabase.from("store_domain_verifications").upsert({
+      store_id: form.id, token,
+    });
+    if (tErr) return toast.error(tErr.message);
+    setDomainToken(token);
     toast.success("Domain saved — now add the DNS records below and verify");
     setChecks([]);
     reload();
   };
 
   const verifyDomain = async () => {
-    if (!form.custom_domain || !form.domain_verification_token) return;
+    if (!form.custom_domain || !domainToken) return;
     setVerifying(true);
     try {
-      const res: any = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
+      const res: any = await verifyFn({ data: { domain: form.custom_domain, token: domainToken } });
       setChecks(res.checks ?? []);
       await supabase.from("stores").update({
         domain_verified: !!res.ok,
@@ -94,11 +110,13 @@ function SettingsPage() {
 
   const disconnectDomain = async () => {
     const { error } = await supabase.from("stores").update({
-      custom_domain: null, domain_verification_token: null, domain_verified: false,
+      custom_domain: null, domain_verified: false,
       domain_last_checked_at: null, domain_last_check_error: null,
       site_status: null, site_status_message: null, site_status_checked_at: null,
     }).eq("id", form.id);
     if (error) return toast.error(error.message);
+    await supabase.from("store_domain_verifications").delete().eq("store_id", form.id);
+    setDomainToken(null);
     setDomainInput("");
     toast.success("Domain disconnected");
     reload();
@@ -544,7 +562,7 @@ function SettingsPage() {
               <p className="text-xs font-semibold uppercase text-muted-foreground">Add these records at your DNS provider</p>
               <DnsRow type="A" host="@" value="185.158.133.1" onCopy={copy} />
               <DnsRow type="A" host="www" value="185.158.133.1" onCopy={copy} />
-              <DnsRow type="TXT" host={`_lovable-verify.${form.custom_domain}`} value={form.domain_verification_token ?? ""} onCopy={copy} />
+              <DnsRow type="TXT" host={`_lovable-verify.${form.custom_domain}`} value={domainToken ?? ""} onCopy={copy} />
               <p className="text-xs text-muted-foreground">DNS changes can take a few minutes to a few hours to propagate.</p>
             </div>
 

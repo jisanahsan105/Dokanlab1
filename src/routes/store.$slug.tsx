@@ -21,7 +21,7 @@ export const Route = createFileRoute("/store/$slug")({ component: Storefront });
 
 type Product = {
   id: string; title: string; description: string | null; price: number;
-  category: string | null; category_id: string | null; image_url: string | null; download_url: string | null;
+  category: string | null; category_id: string | null; image_url: string | null;
   active: boolean; created_at: string;
 };
 
@@ -617,7 +617,7 @@ function ProductCard({ p, slug, isDigital, t, ribbon, compact, onAddToCart }: { 
 }
 
 function fileTypeOf(p: Product): string {
-  const url = p.download_url || p.image_url || "";
+  const url = p.image_url || "";
   const m = url.toLowerCase().match(/\.([a-z0-9]{2,5})(\?|$)/);
   if (m) return m[1].toUpperCase();
   const cat = (p.category || "").toLowerCase();
