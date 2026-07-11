@@ -68,6 +68,7 @@ function PaymentsAdmin() {
       done_for_you_first_amount: Number(settings.done_for_you_first_amount),
       done_for_you_recurring_amount: Number(settings.done_for_you_recurring_amount),
       instructions: settings.instructions,
+      welcome_message: settings.welcome_message,
     }).eq("id", "default");
     setSavingSettings(false);
     if (error) return toast.error(error.message);
@@ -120,6 +121,16 @@ function PaymentsAdmin() {
           </div>
           <div className="mt-4"><Label>Bank / other details (optional)</Label><Textarea rows={2} value={settings.bank_details ?? ""} onChange={(e) => setSettings({ ...settings, bank_details: e.target.value })} /></div>
           <div className="mt-4"><Label>Instructions shown to users</Label><Textarea rows={3} value={settings.instructions ?? ""} onChange={(e) => setSettings({ ...settings, instructions: e.target.value })} placeholder="e.g. Send Money korun, Cash Out noy. 24 ghontar moddhe approve kora hobe." /></div>
+          <div className="mt-4">
+            <Label>Welcome message (auto-sent when a user is approved)</Label>
+            <Textarea
+              rows={4}
+              value={settings.welcome_message ?? ""}
+              onChange={(e) => setSettings({ ...settings, welcome_message: e.target.value })}
+              placeholder="Welcome message with any link you want the user to see right after approval."
+            />
+            <p className="mt-1 text-xs text-muted-foreground">This exact text lands in the user's Messages inbox the moment you approve them. Include a link — it will auto-become clickable.</p>
+          </div>
           <div className="mt-4"><Button onClick={saveSettings} disabled={savingSettings}><Save className="mr-2 h-4 w-4" /> {savingSettings ? "Saving…" : "Save settings"}</Button></div>
         </div>
       )}
