@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStore } from "@/lib/use-my-store";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
-import { verifyDomainDns } from "@/lib/domain.functions";
 import { AlertTriangle, CheckCircle2, ExternalLink, Globe, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/settings")({ component: SettingsPage });
@@ -22,59 +20,9 @@ function SettingsPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [saving, setSaving] = useState(false);
   const [domainInput, setDomainInput] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const verifiedHealthCheckKey = useRef<string | null>(null);
-  const [checks, setChecks] = useState<Array<{ key: string; status: "success" | "warning" | "error"; found: string; message: string; checkedAt: string }>>([]);
-  const [siteStatus, setSiteStatus] = useState<"live" | "setting_up" | "dns_only" | null>(null);
-  const [siteMessage, setSiteMessage] = useState<string | null>(null);
-  const verifyFn = useServerFn(verifyDomainDns);
 
   useEffect(() => { if (store) setForm(store); }, [store]);
   useEffect(() => { if (store?.custom_domain) setDomainInput(store.custom_domain); }, [store]);
-  // Hydrate cached status so reload shows last known state immediately
-  useEffect(() => {
-    if (store?.site_status) {
-      setSiteStatus(store.site_status as any);
-      setSiteMessage(store.site_status_message ?? null);
-    }
-  }, [store?.site_status, store?.site_status_message]);
-
-  // Auto-poll every 30s while a domain is connected but not yet verified.
-  // Must run BEFORE any early return to keep hook order stable.
-  useEffect(() => {
-    if (!form?.custom_domain) return;
-    if (form?.domain_verified && siteStatus === "live") return;
-    const id = setInterval(() => { runVerify(true); }, 30000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form?.custom_domain, form?.domain_verified, form?.domain_verification_token, siteStatus]);
-
-  // Re-check immediately when the tab regains focus or comes back online,
-  // so users see the live state without waiting for the 30s tick.
-  useEffect(() => {
-    if (!form?.custom_domain) return;
-    if (form?.domain_verified && siteStatus === "live") return;
-    const trigger = () => { if (document.visibilityState === "visible") runVerify(true); };
-    window.addEventListener("focus", trigger);
-    window.addEventListener("online", trigger);
-    document.addEventListener("visibilitychange", trigger);
-    return () => {
-      window.removeEventListener("focus", trigger);
-      window.removeEventListener("online", trigger);
-      document.removeEventListener("visibilitychange", trigger);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form?.custom_domain, form?.domain_verified, siteStatus]);
-
-  // Re-check previously verified domains once when Settings opens, so broken DNS is not shown as live.
-  useEffect(() => {
-    if (!form?.id || !form?.custom_domain || !form?.domain_verified || !form?.domain_verification_token) return;
-    const key = `${form.id}:${form.custom_domain}:${form.domain_verification_token}`;
-    if (verifiedHealthCheckKey.current === key) return;
-    verifiedHealthCheckKey.current = key;
-    runVerify(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form?.id, form?.custom_domain, form?.domain_verified, form?.domain_verification_token]);
 
   if (!form) return null;
 
@@ -126,65 +74,6 @@ function SettingsPage() {
     reload();
   };
 
-  async function runVerify(silent = false) {
-    if (!form.custom_domain || !form.domain_verification_token) return;
-    if (!silent) setVerifying(true);
-    const checkedAt = new Date().toISOString();
-    try {
-      const res = await verifyFn({ data: { domain: form.custom_domain, token: form.domain_verification_token } });
-      if ((res as any).checks) setChecks((res as any).checks);
-      const nextStatus = (res as any).siteStatus ?? null;
-      const nextMessage = (res as any).siteMessage ?? null;
-      if (nextStatus) {
-        setSiteStatus(nextStatus);
-        setSiteMessage(nextMessage);
-        // Persist so other sessions / reload show fresh state
-        if (nextStatus !== form.site_status || nextMessage !== form.site_status_message) {
-          await supabase.from("stores").update({
-            site_status: nextStatus,
-            site_status_message: nextMessage,
-            site_status_checked_at: checkedAt,
-          }).eq("id", form.id);
-          if (silent && nextStatus === "live" && form.site_status !== "live") {
-            toast.success("✅ Your site is now live with SSL!");
-          }
-        }
-      }
-      if (!res.ok) {
-        await supabase.from("stores").update({
-          domain_verified: false, domain_last_checked_at: checkedAt, domain_last_check_error: res.error,
-        }).eq("id", form.id);
-        if (!silent) toast.error(res.error);
-        reload();
-        if (!silent) setVerifying(false);
-        return;
-      }
-      const { error } = await supabase.from("stores").update({
-        custom_domain: res.canonicalDomain ?? form.custom_domain,
-        domain_verified: true, domain_last_checked_at: checkedAt, domain_last_check_error: null,
-      }).eq("id", form.id);
-      if (error) toast.error(error.message);
-      else { toast.success("Domain verified! Your store is live on " + form.custom_domain); reload(); }
-    } catch (e: any) {
-      const msg = e?.message ?? "Verification failed";
-      await supabase.from("stores").update({
-        domain_last_checked_at: checkedAt, domain_last_check_error: msg,
-      }).eq("id", form.id);
-      if (!silent) toast.error(msg);
-      reload();
-    }
-    if (!silent) setVerifying(false);
-  }
-  const verify = () => runVerify(false);
-  const retryVerify = async () => {
-    // Clear last error first so the UI updates immediately, then re-run verification now
-    await supabase.from("stores").update({ domain_last_check_error: null }).eq("id", form.id);
-    setForm({ ...form, domain_last_check_error: null });
-    await runVerify(false);
-  };
-
-  const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
-
   const deleteStore = async () => {
     if (!form?.id) return;
     const name = form.name ?? "this store";
@@ -197,8 +86,6 @@ function SettingsPage() {
     navigate({ to: "/dashboard" });
     window.setTimeout(() => window.location.reload(), 300);
   };
-
-  const apexHost = form?.custom_domain ?? domainInput.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
