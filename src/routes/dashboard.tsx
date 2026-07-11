@@ -38,7 +38,7 @@ function DashboardLayout() {
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!user || checking || !store) return;
+    if (!user || checking || (!store && !isAdmin)) return;
     let active = true;
     const loadUnread = async () => {
       let q = supabase.from("store_messages").select("id", { count: "exact", head: true }).eq("seen", false);
