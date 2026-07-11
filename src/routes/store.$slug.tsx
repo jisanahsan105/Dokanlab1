@@ -173,8 +173,45 @@ function StoreHome({ slug }: { slug: string }) {
         ["--sf-hero" as any]: "linear-gradient(135deg, #10B981 0%, #06B6D4 55%, #0EA5E9 100%)",
       };
 
+  // Owner-set brand primary color overrides theme default
+  if (store.brand_primary_color) {
+    (themeStyle as any)["--sf-primary"] = store.brand_primary_color;
+    (themeStyle as any)["--sf-hero"] = `linear-gradient(135deg, ${store.brand_primary_color} 0%, ${(themeStyle as any)["--sf-primary-2"]} 100%)`;
+  }
+
+  // Update <title>, meta description, favicon from store settings
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const title = store.meta_title?.trim() || store.name;
+    if (title) document.title = title;
+    const desc = store.meta_description?.trim() || store.tagline || store.bio;
+    if (desc) {
+      let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!m) { m = document.createElement("meta"); m.name = "description"; document.head.appendChild(m); }
+      m.content = desc;
+    }
+    if (store.favicon_url) {
+      let l = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.appendChild(l); }
+      l.href = store.favicon_url;
+    }
+  }, [store.meta_title, store.meta_description, store.name, store.tagline, store.bio, store.favicon_url]);
+
   return (
     <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)" }} className="min-h-screen font-sans">
+      {/* Holiday banner */}
+      {store.holiday_mode && (
+        <div className="w-full px-4 py-2.5 text-center text-sm font-semibold text-white" style={{ background: "#DC2626" }}>
+          🏖️ {store.holiday_message?.trim() || "We are currently closed. Orders are paused."}
+        </div>
+      )}
+      {/* Announcement bar */}
+      {store.announcement_enabled && store.announcement_text?.trim() && (
+        <div className="w-full px-4 py-2 text-center text-xs font-medium text-white md:text-sm"
+          style={{ background: "linear-gradient(90deg, var(--sf-primary), var(--sf-primary-2))" }}>
+          <span className="inline-flex items-center gap-2"><Megaphone className="h-3.5 w-3.5" /> {store.announcement_text}</span>
+        </div>
+      )}
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 shadow-sm" style={{ background: "var(--sf-surface)", borderBottom: "1px solid var(--sf-border)" }}>
         {/* Top bar: logo + search + actions */}
