@@ -13,7 +13,8 @@ export const Route = createFileRoute("/dashboard/messages")({ component: Message
 
 type StoreMessage = {
   id: string;
-  store_id: string;
+  store_id: string | null;
+  user_id: string | null;
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
@@ -35,15 +36,19 @@ function MessagesPage() {
   const [loading, setLoading] = useState(true);
 
   const load = async (adminOverride = isAdmin) => {
-    if (!user || (!store && !adminOverride)) return;
+    if (!user) return;
     setLoading(true);
     let q = supabase.from("store_messages").select("*").order("created_at", { ascending: false });
-    if (!adminOverride && store) q = q.eq("store_id", store.id);
+    if (!adminOverride) {
+      const orParts = [`user_id.eq.${user.id}`];
+      if (store) orParts.push(`store_id.eq.${store.id}`);
+      q = q.or(orParts.join(","));
+    }
     const { data, error } = await q;
     if (error) toast.error(error.message);
     setMessages((data ?? []) as StoreMessage[]);
     if (adminOverride) {
-      const ids = Array.from(new Set((data ?? []).map((m: any) => m.store_id)));
+      const ids = Array.from(new Set((data ?? []).map((m: any) => m.store_id).filter(Boolean)));
       if (ids.length) {
         const { data: stores } = await supabase.from("stores").select("id,name").in("id", ids);
         const names: Record<string, string> = {};
@@ -77,7 +82,7 @@ function MessagesPage() {
   const filtered = useMemo(() => {
     const s = query.trim().toLowerCase();
     if (!s) return messages;
-    return messages.filter((m) => [m.customer_name, m.customer_phone, m.customer_email, m.message, storeNames[m.store_id]]
+    return messages.filter((m) => [m.customer_name, m.customer_phone, m.customer_email, m.message, m.store_id ? storeNames[m.store_id] : null]
       .filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
   }, [messages, query, storeNames]);
 
@@ -138,11 +143,11 @@ function MessagesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate font-semibold">{m.customer_name || m.customer_phone || m.customer_email || "Customer"}</div>
-                    {isAdmin && <div className="truncate text-xs text-muted-foreground">{storeNames[m.store_id] ?? "Store"}</div>}
+                    {isAdmin && <div className="truncate text-xs text-muted-foreground">{m.store_id ? (storeNames[m.store_id] ?? "Store") : "System"}</div>}
                   </div>
                   {!m.seen && <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />}
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{m.message}</p>
+                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground whitespace-pre-line">{m.message}</p>
                 <div className="mt-2 text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</div>
               </button>
             ))}
@@ -164,7 +169,7 @@ function MessagesPage() {
                     {active.seen ? <Badge variant="secondary">Seen</Badge> : <Badge>New</Badge>}
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{new Date(active.created_at).toLocaleString()}</p>
-                  {isAdmin && <p className="text-sm text-muted-foreground">Store: {storeNames[active.store_id] ?? active.store_id}</p>}
+                  {isAdmin && active.store_id && <p className="text-sm text-muted-foreground">Store: {storeNames[active.store_id] ?? active.store_id}</p>}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => deleteMessage(active.id)}>
                   <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -177,12 +182,26 @@ function MessagesPage() {
               </div>
 
               <div className="rounded-xl border border-border bg-muted/20 p-5 whitespace-pre-line leading-relaxed">
-                {active.message}
+                <MessageBody text={active.message} />
               </div>
             </div>
           )}
         </section>
       </div>
     </div>
+  );
+}
+
+function MessageBody({ text }: { text: string }) {
+  // Auto-linkify URLs
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        /^https?:\/\//.test(p)
+          ? <a key={i} href={p} target="_blank" rel="noreferrer" className="text-primary underline break-all">{p}</a>
+          : <span key={i}>{p}</span>,
+      )}
+    </>
   );
 }

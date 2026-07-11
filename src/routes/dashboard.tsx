@@ -41,9 +41,16 @@ function DashboardLayout() {
     if (!user || checking || (!store && !isAdmin)) return;
     let active = true;
     const loadUnread = async () => {
-      let q = supabase.from("store_messages").select("id", { count: "exact", head: true }).eq("seen", false);
-      if (!isAdmin) q = q.eq("store_id", store.id);
-      const { count } = await q;
+      let count = 0;
+      if (isAdmin) {
+        const { count: c } = await supabase.from("store_messages").select("id", { count: "exact", head: true }).eq("seen", false);
+        count = c ?? 0;
+      } else {
+        const orParts: string[] = [`user_id.eq.${user.id}`];
+        if (store) orParts.push(`store_id.eq.${store.id}`);
+        const { count: c } = await supabase.from("store_messages").select("id", { count: "exact", head: true }).eq("seen", false).or(orParts.join(","));
+        count = c ?? 0;
+      }
       if (active) setUnreadMessages(count ?? 0);
     };
     loadUnread();
@@ -53,15 +60,30 @@ function DashboardLayout() {
     return () => { active = false; supabase.removeChannel(ch); };
   }, [user, checking, store, isAdmin]);
 
+  // Auto-reload when access_status flips (e.g. admin approves the user)
+  useEffect(() => {
+    if (!user || isAdmin) return;
+    const ch = supabase.channel(`profile-access-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+        (payload: any) => {
+          const newStatus = payload?.new?.access_status;
+          if (newStatus && newStatus !== accessStatus) {
+            window.location.reload();
+          }
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, isAdmin, accessStatus]);
+
   if (loading || checking) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
   }
 
-  if (!store && !isAdmin) {
-    if (!isAdmin && accessStatus !== "approved") {
-      return <AccessGate status={accessStatus} onSignOut={() => { signOut(); navigate({ to: "/" }); }} />;
-    }
-    return <CreateStore onCreated={setStore} userId={user!.id} />;
+  if (!isAdmin && accessStatus !== "approved") {
+    return <AccessGate status={accessStatus} onSignOut={() => { signOut(); navigate({ to: "/" }); }} />;
   }
 
   const nav = [
@@ -73,7 +95,10 @@ function DashboardLayout() {
       { to: "/dashboard/reviews", label: "Reviews", icon: Star },
       { to: "/dashboard/settings", label: "Settings", icon: Settings },
       { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
-    ] : []),
+    ] : (!isAdmin ? [
+      { to: "/dashboard", label: "Overview", icon: StoreIcon, exact: true },
+      { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
+    ] : [])),
     { to: "/dashboard/messages", label: "Messages", icon: MessageCircle, badge: unreadMessages },
     ...(isAdmin ? [
       { to: "/dashboard/users", label: "Users", icon: UsersIcon },
@@ -120,7 +145,11 @@ function DashboardLayout() {
             );
           })}
         </aside>
-        <main><Outlet /></main>
+        <main>
+          {!store && !isAdmin && loc.pathname === "/dashboard"
+            ? <CreateStore onCreated={setStore} userId={user!.id} />
+            : <Outlet />}
+        </main>
       </div>
     </div>
   );
