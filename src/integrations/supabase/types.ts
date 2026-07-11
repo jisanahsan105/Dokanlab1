@@ -27,6 +27,7 @@ export type Database = {
           rocket_number: string | null
           self_serve_amount: number
           updated_at: string
+          welcome_message: string | null
         }
         Insert: {
           bank_details?: string | null
@@ -40,6 +41,7 @@ export type Database = {
           rocket_number?: string | null
           self_serve_amount?: number
           updated_at?: string
+          welcome_message?: string | null
         }
         Update: {
           bank_details?: string | null
@@ -53,6 +55,7 @@ export type Database = {
           rocket_number?: string | null
           self_serve_amount?: number
           updated_at?: string
+          welcome_message?: string | null
         }
         Relationships: []
       }
@@ -297,7 +300,8 @@ export type Database = {
           seen: boolean
           seen_at: string | null
           source: string
-          store_id: string
+          store_id: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -309,7 +313,8 @@ export type Database = {
           seen?: boolean
           seen_at?: string | null
           source?: string
-          store_id: string
+          store_id?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -321,7 +326,8 @@ export type Database = {
           seen?: boolean
           seen_at?: string | null
           source?: string
-          store_id?: string
+          store_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
