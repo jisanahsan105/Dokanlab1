@@ -638,6 +638,7 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
   ].filter(l => (l.text && l.text.trim()) || l.href);
 
   return (
+    <>
     <footer className="mt-16" style={{ background: palette.bg, color: palette.text }}>
       {/* Newsletter band */}
       <div className="relative overflow-hidden border-b" style={{ borderColor: palette.divider }}>
