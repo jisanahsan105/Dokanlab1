@@ -718,15 +718,25 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
           <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: palette.text }}>Information</h3>
           <div className="mt-2 h-0.5 w-8 rounded-full" style={{ background: palette.accent }} />
           <ul className="mt-5 space-y-3 text-sm">
-            {(links.length > 0 ? links : [{ label: "About Us", href: "#" }, { label: "Facebook Page", href: "#" }]).map(l => (
-              <li key={l.label}>
-                <a href={l.href} target="_blank" rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 transition hover:text-white"
-                  style={{ color: palette.muted }}>
-                  <ChevronRight className="h-3 w-3 opacity-60" /> {l.label}
-                </a>
-              </li>
-            ))}
+            {(links.length > 0 ? links : [{ label: "About Us", href: "#" } as FooterLink, { label: "Facebook Page", href: "#" } as FooterLink]).map(l => {
+              const hasText = !!(l.text && l.text.trim());
+              const cls = "inline-flex items-center gap-1.5 transition hover:text-white text-left";
+              return (
+                <li key={l.label}>
+                  {hasText ? (
+                    <button type="button" onClick={() => setOpenPage({ title: l.label, body: l.text! })}
+                      className={cls} style={{ color: palette.muted }}>
+                      <ChevronRight className="h-3 w-3 opacity-60" /> {l.label}
+                    </button>
+                  ) : (
+                    <a href={l.href} target="_blank" rel="noreferrer"
+                      className={cls} style={{ color: palette.muted }}>
+                      <ChevronRight className="h-3 w-3 opacity-60" /> {l.label}
+                    </a>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
