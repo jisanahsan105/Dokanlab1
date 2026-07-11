@@ -14,6 +14,7 @@ import {
   Search, ShoppingBag, ShoppingCart, Download, Sparkles, Flame, Star,
   ChevronRight, FileText, Package, Tag, ArrowRight,
   MapPin, Mail, Phone, Send, Facebook, Truck, ShieldCheck, RotateCcw, Headphones,
+  Instagram, Youtube, Music2, Megaphone, Clock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/store/$slug")({ component: Storefront });
