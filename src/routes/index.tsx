@@ -177,7 +177,7 @@ function Index() {
       <section id="pricing" className="container mx-auto px-4 py-24">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="font-display text-3xl font-bold md:text-5xl">Simple, transparent pricing</h2>
-          <p className="mt-4 text-muted-foreground">Apnar chahida onujayi plan beche nin. Kono hidden charge nei.</p>
+          <p className="mt-4 text-muted-foreground">Choose the plan that fits your needs. No hidden charges.</p>
         </div>
 
         <div className="mx-auto mb-16 grid max-w-5xl gap-6 md:grid-cols-2">
@@ -185,8 +185,8 @@ function Index() {
           <div className="relative flex flex-col rounded-3xl border border-border bg-card p-8 shadow-sm transition hover:shadow-md">
             <div className="mb-6">
               <p className="text-sm font-medium text-muted-foreground">Self-Serve</p>
-              <h3 className="mt-1 font-display text-2xl font-bold">Nije Manage Korun</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Apni nije product add, order manage, ebong store setup korben.</p>
+              <h3 className="mt-1 font-display text-2xl font-bold">Manage It Yourself</h3>
+              <p className="mt-2 text-sm text-muted-foreground">You add products, manage orders, and set up your store on your own.</p>
             </div>
             <div className="mb-6 flex items-baseline gap-1">
               <span className="font-display text-5xl font-bold">৳499</span>
@@ -219,8 +219,8 @@ function Index() {
             </div>
             <div className="mb-6">
               <p className="text-sm font-medium text-primary">Done-For-You</p>
-              <h3 className="mt-1 font-display text-2xl font-bold">Amra Sob Kore Debo</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Store setup, product upload, design — sob amader team korbe.</p>
+              <h3 className="mt-1 font-display text-2xl font-bold">We Do It All For You</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Store setup, product upload, and design — all handled by our team.</p>
             </div>
             <div className="mb-2 flex items-baseline gap-1">
               <span className="font-display text-5xl font-bold">৳999</span>
