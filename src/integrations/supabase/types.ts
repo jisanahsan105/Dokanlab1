@@ -286,6 +286,53 @@ export type Database = {
           },
         ]
       }
+      store_messages: {
+        Row: {
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          id: string
+          message: string
+          seen: boolean
+          seen_at: string | null
+          source: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          message: string
+          seen?: boolean
+          seen_at?: string | null
+          source?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          id?: string
+          message?: string
+          seen?: boolean
+          seen_at?: string | null
+          source?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_messages_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           announcement_enabled: boolean
@@ -573,6 +620,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_store_cascade: { Args: { _store_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
