@@ -627,12 +627,15 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
     divider: "rgba(255,255,255,0.08)",
   };
 
-  const links = [
+  const [openPage, setOpenPage] = useState<null | { title: string; body: string }>(null);
+
+  type FooterLink = { label: string; href?: string; text?: string };
+  const links: FooterLink[] = [
     { label: "About Us", href: store.footer_about_url },
     { label: "Facebook Page", href: store.footer_facebook_url },
-    { label: "Terms & Condition", href: store.footer_terms_url },
-    { label: "Warranty Policy", href: store.footer_warranty_url },
-  ].filter(l => l.href);
+    { label: "Terms & Condition", href: store.footer_terms_url, text: store.footer_terms_text },
+    { label: "Warranty Policy", href: store.footer_warranty_url, text: store.footer_warranty_text },
+  ].filter(l => (l.text && l.text.trim()) || l.href);
 
   return (
     <footer className="mt-16" style={{ background: palette.bg, color: palette.text }}>
