@@ -247,8 +247,13 @@ function StoreHome({ slug }: { slug: string }) {
       {store.banner_enabled !== false && store.banner_url && (
         <section className="container mx-auto px-4 pt-4">
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-            className="overflow-hidden rounded-2xl shadow-lg" style={{ border: "1px solid var(--sf-border)" }}>
-            <img src={store.banner_url} alt={`${store.name} banner`} className="w-full max-h-[420px] object-cover" />
+            className="overflow-hidden rounded-2xl shadow-lg"
+            style={{ border: "1px solid var(--sf-border)", background: "var(--sf-surface-2)" }}>
+            <img
+              src={store.banner_url}
+              alt={`${store.name} banner`}
+              className="block w-full h-auto object-contain"
+            />
           </motion.div>
         </section>
       )}
