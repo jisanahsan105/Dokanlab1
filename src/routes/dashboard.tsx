@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ShoppingBag, Package, ShoppingCart, Settings, LogOut, Store as StoreIcon, ExternalLink, Tag, Star, Users as UsersIcon, Clock, Ban } from "lucide-react";
+import { ShoppingBag, Package, ShoppingCart, Settings, LogOut, Store as StoreIcon, ExternalLink, Tag, Star, Users as UsersIcon, Clock, Ban, CreditCard, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({ component: DashboardLayout });
@@ -54,7 +54,11 @@ function DashboardLayout() {
     { to: "/dashboard/orders", label: "Orders", icon: ShoppingCart },
     { to: "/dashboard/reviews", label: "Reviews", icon: Star },
     { to: "/dashboard/settings", label: "Settings", icon: Settings },
-    ...(isAdmin ? [{ to: "/dashboard/users", label: "Users", icon: UsersIcon }] : []),
+    { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
+    ...(isAdmin ? [
+      { to: "/dashboard/users", label: "Users", icon: UsersIcon },
+      { to: "/dashboard/payments", label: "Payments", icon: Wallet },
+    ] : []),
   ] as { to: string; label: string; icon: any; exact?: boolean }[];
 
   return (
