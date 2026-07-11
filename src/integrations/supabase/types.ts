@@ -633,6 +633,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_store_active: { Args: { _store_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "super_admin" | "user"
