@@ -47,7 +47,7 @@ function DashboardLayout() {
       if (active) setUnreadMessages(count ?? 0);
     };
     loadUnread();
-    const ch = supabase.channel(`store-messages-nav-${store.id}-${isAdmin ? "admin" : "owner"}`)
+    const ch = supabase.channel(`store-messages-nav-${store?.id ?? "admin"}-${isAdmin ? "admin" : "owner"}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "store_messages" }, loadUnread)
       .subscribe();
     return () => { active = false; supabase.removeChannel(ch); };
