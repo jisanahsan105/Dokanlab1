@@ -175,6 +175,79 @@ function Index() {
 
       {/* CTA */}
       <section id="pricing" className="container mx-auto px-4 py-24">
+        <div className="mx-auto mb-14 max-w-2xl text-center">
+          <h2 className="font-display text-3xl font-bold md:text-5xl">Simple, transparent pricing</h2>
+          <p className="mt-4 text-muted-foreground">Apnar chahida onujayi plan beche nin. Kono hidden charge nei.</p>
+        </div>
+
+        <div className="mx-auto mb-16 grid max-w-5xl gap-6 md:grid-cols-2">
+          {/* Self-serve plan */}
+          <div className="relative flex flex-col rounded-3xl border border-border bg-card p-8 shadow-sm transition hover:shadow-md">
+            <div className="mb-6">
+              <p className="text-sm font-medium text-muted-foreground">Self-Serve</p>
+              <h3 className="mt-1 font-display text-2xl font-bold">Nije Manage Korun</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Apni nije product add, order manage, ebong store setup korben.</p>
+            </div>
+            <div className="mb-6 flex items-baseline gap-1">
+              <span className="font-display text-5xl font-bold">৳499</span>
+              <span className="text-muted-foreground">/month</span>
+            </div>
+            <ul className="mb-8 space-y-3 text-sm">
+              {[
+                "Unlimited products",
+                "Order management dashboard",
+                "COD, bKash, Nagad, Rocket support",
+                "Custom delivery zones",
+                "SEO, announcement bar, policy pages",
+                "Email support",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/signup" className="mt-auto">
+              <Button variant="outline" className="w-full rounded-full">Get started</Button>
+            </Link>
+          </div>
+
+          {/* Done-for-you plan */}
+          <div className="relative flex flex-col overflow-hidden rounded-3xl border-2 border-primary bg-card p-8 shadow-lg">
+            <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+              Recommended
+            </div>
+            <div className="mb-6">
+              <p className="text-sm font-medium text-primary">Done-For-You</p>
+              <h3 className="mt-1 font-display text-2xl font-bold">Amra Sob Kore Debo</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Store setup, product upload, design — sob amader team korbe.</p>
+            </div>
+            <div className="mb-2 flex items-baseline gap-1">
+              <span className="font-display text-5xl font-bold">৳999</span>
+              <span className="text-muted-foreground">1st month</span>
+            </div>
+            <p className="mb-6 text-sm text-muted-foreground">Then <span className="font-semibold text-foreground">৳499/month</span> only</p>
+            <ul className="mb-8 space-y-3 text-sm">
+              {[
+                "Everything in Self-Serve",
+                "Full store setup by our team",
+                "Product upload & categorization",
+                "Logo & banner design help",
+                "Delivery & payment configuration",
+                "Priority support (WhatsApp)",
+              ].map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/signup" className="mt-auto">
+              <Button className="w-full rounded-full">Start with Done-For-You</Button>
+            </Link>
+          </div>
+        </div>
+
         <div className="relative overflow-hidden rounded-3xl p-10 text-center text-white shadow-2xl md:p-16" style={{ background: "var(--gradient-hero)" }}>
           <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(600px 300px at 20% 20%, rgba(255,255,255,0.4), transparent), radial-gradient(500px 300px at 80% 80%, rgba(255,255,255,0.25), transparent)" }} />
           <div className="relative">
