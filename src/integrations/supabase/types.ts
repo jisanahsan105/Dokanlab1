@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_payment_settings: {
+        Row: {
+          bank_details: string | null
+          bkash_number: string | null
+          created_at: string
+          done_for_you_first_amount: number
+          done_for_you_recurring_amount: number
+          id: string
+          instructions: string | null
+          nagad_number: string | null
+          rocket_number: string | null
+          self_serve_amount: number
+          updated_at: string
+        }
+        Insert: {
+          bank_details?: string | null
+          bkash_number?: string | null
+          created_at?: string
+          done_for_you_first_amount?: number
+          done_for_you_recurring_amount?: number
+          id?: string
+          instructions?: string | null
+          nagad_number?: string | null
+          rocket_number?: string | null
+          self_serve_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_details?: string | null
+          bkash_number?: string | null
+          created_at?: string
+          done_for_you_first_amount?: number
+          done_for_you_recurring_amount?: number
+          id?: string
+          instructions?: string | null
+          nagad_number?: string | null
+          rocket_number?: string | null
+          self_serve_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           active: boolean
@@ -170,6 +212,9 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          subscription_plan: string | null
+          subscription_status: string
+          subscription_valid_until: string | null
         }
         Insert: {
           access_status?: string
@@ -177,6 +222,9 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          subscription_plan?: string | null
+          subscription_status?: string
+          subscription_valid_until?: string | null
         }
         Update: {
           access_status?: string
@@ -184,6 +232,9 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          subscription_plan?: string | null
+          subscription_status?: string
+          subscription_valid_until?: string | null
         }
         Relationships: []
       }
@@ -439,6 +490,60 @@ export type Database = {
           whatsapp?: string | null
           whatsapp_channel_url?: string | null
           youtube_url?: string | null
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          payment_method: string
+          plan: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          screenshot_url: string | null
+          sender_number: string | null
+          status: string
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_method: string
+          plan: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_url?: string | null
+          sender_number?: string | null
+          status?: string
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          payment_method?: string
+          plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          screenshot_url?: string | null
+          sender_number?: string | null
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
