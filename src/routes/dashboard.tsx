@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ShoppingBag, Package, ShoppingCart, Settings, LogOut, Store as StoreIcon, ExternalLink, Tag, Star } from "lucide-react";
+import { ShoppingBag, Package, ShoppingCart, Settings, LogOut, Store as StoreIcon, ExternalLink, Tag, Star, Users as UsersIcon, Clock, Ban } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({ component: DashboardLayout });
@@ -17,13 +17,21 @@ function DashboardLayout() {
   const loc = useLocation();
   const [store, setStore] = useState<any>(null);
   const [checking, setChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [accessStatus, setAccessStatus] = useState<"pending" | "approved" | "blocked">("pending");
 
   useEffect(() => {
     if (loading) return;
     if (!user) { navigate({ to: "/login" }); return; }
     (async () => {
-      const { data } = await supabase.from("stores").select("*").eq("owner_id", user.id).maybeSingle();
-      setStore(data);
+      const [{ data: s }, { data: roles }, { data: prof }] = await Promise.all([
+        supabase.from("stores").select("*").eq("owner_id", user.id).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "super_admin"),
+        supabase.from("profiles").select("access_status").eq("id", user.id).maybeSingle(),
+      ]);
+      setStore(s);
+      setIsAdmin(!!roles && roles.length > 0);
+      setAccessStatus(((prof as any)?.access_status ?? "pending") as any);
       setChecking(false);
     })();
   }, [user, loading, navigate]);
@@ -32,7 +40,12 @@ function DashboardLayout() {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
   }
 
-  if (!store) return <CreateStore onCreated={setStore} userId={user!.id} />;
+  if (!store) {
+    if (!isAdmin && accessStatus !== "approved") {
+      return <AccessGate status={accessStatus} onSignOut={() => { signOut(); navigate({ to: "/" }); }} />;
+    }
+    return <CreateStore onCreated={setStore} userId={user!.id} />;
+  }
 
   const nav = [
     { to: "/dashboard", label: "Overview", icon: StoreIcon, exact: true },
@@ -41,7 +54,8 @@ function DashboardLayout() {
     { to: "/dashboard/orders", label: "Orders", icon: ShoppingCart },
     { to: "/dashboard/reviews", label: "Reviews", icon: Star },
     { to: "/dashboard/settings", label: "Settings", icon: Settings },
-  ];
+    ...(isAdmin ? [{ to: "/dashboard/users", label: "Users", icon: UsersIcon }] : []),
+  ] as { to: string; label: string; icon: any; exact?: boolean }[];
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -68,13 +82,37 @@ function DashboardLayout() {
           {nav.map((n) => {
             const active = n.exact ? loc.pathname === n.to : loc.pathname.startsWith(n.to);
             return (
-              <Link key={n.to} to={n.to} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+              <Link key={n.to} to={n.to as any} className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${active ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
                 <n.icon className="h-4 w-4" /> {n.label}
               </Link>
             );
           })}
         </aside>
         <main><Outlet /></main>
+      </div>
+    </div>
+  );
+}
+
+function AccessGate({ status, onSignOut }: { status: "pending" | "approved" | "blocked"; onSignOut: () => void }) {
+  const blocked = status === "blocked";
+  return (
+    <div className="grid min-h-screen place-items-center px-4" style={{ background: "var(--gradient-soft)" }}>
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/10">
+          {blocked ? <Ban className="h-7 w-7 text-destructive" /> : <Clock className="h-7 w-7 text-primary" />}
+        </div>
+        <h1 className="mt-4 text-2xl font-bold">
+          {blocked ? "Access blocked" : "Waiting for approval"}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {blocked
+            ? "Your account has been blocked by the administrator. Please contact support if you think this is a mistake."
+            : "Thanks for signing up! An administrator needs to approve your account before you can create a store. You'll get access as soon as it's reviewed."}
+        </p>
+        <Button variant="outline" className="mt-6 w-full" onClick={onSignOut}>
+          <LogOut className="mr-2 h-4 w-4" /> Sign out
+        </Button>
       </div>
     </div>
   );
