@@ -254,7 +254,9 @@ export type Database = {
           footer_facebook_url: string | null
           footer_phone: string | null
           footer_playstore_url: string | null
+          footer_terms_text: string | null
           footer_terms_url: string | null
+          footer_warranty_text: string | null
           footer_warranty_url: string | null
           id: string
           logo_url: string | null
@@ -290,7 +292,9 @@ export type Database = {
           footer_facebook_url?: string | null
           footer_phone?: string | null
           footer_playstore_url?: string | null
+          footer_terms_text?: string | null
           footer_terms_url?: string | null
+          footer_warranty_text?: string | null
           footer_warranty_url?: string | null
           id?: string
           logo_url?: string | null
@@ -326,7 +330,9 @@ export type Database = {
           footer_facebook_url?: string | null
           footer_phone?: string | null
           footer_playstore_url?: string | null
+          footer_terms_text?: string | null
           footer_terms_url?: string | null
+          footer_warranty_text?: string | null
           footer_warranty_url?: string | null
           id?: string
           logo_url?: string | null
