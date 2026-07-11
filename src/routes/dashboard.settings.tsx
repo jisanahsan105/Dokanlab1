@@ -213,6 +213,7 @@ function SettingsPage() {
       product_whatsapp_url: form.product_whatsapp_url,
       footer_about_url: form.footer_about_url, footer_facebook_url: form.footer_facebook_url,
       footer_terms_url: form.footer_terms_url, footer_warranty_url: form.footer_warranty_url,
+      footer_terms_text: form.footer_terms_text, footer_warranty_text: form.footer_warranty_text,
       footer_playstore_url: form.footer_playstore_url, footer_appstore_url: form.footer_appstore_url,
       footer_copyright: form.footer_copyright,
       delivery_inside_dhaka: Number(form.delivery_inside_dhaka ?? 0),
@@ -337,10 +338,26 @@ function SettingsPage() {
             <Input value={form.footer_about_url ?? ""} onChange={(e) => setForm({ ...form, footer_about_url: e.target.value })} placeholder="https://…" /></div>
           <div><Label>Facebook Page URL</Label>
             <Input value={form.footer_facebook_url ?? ""} onChange={(e) => setForm({ ...form, footer_facebook_url: e.target.value })} placeholder="https://facebook.com/…" /></div>
-          <div><Label>Terms & Conditions URL</Label>
-            <Input value={form.footer_terms_url ?? ""} onChange={(e) => setForm({ ...form, footer_terms_url: e.target.value })} placeholder="https://…" /></div>
-          <div><Label>Warranty Policy URL</Label>
-            <Input value={form.footer_warranty_url ?? ""} onChange={(e) => setForm({ ...form, footer_warranty_url: e.target.value })} placeholder="https://…" /></div>
+          <div className="sm:col-span-2">
+            <Label>Terms & Conditions</Label>
+            <Textarea rows={5} value={form.footer_terms_text ?? ""}
+              onChange={(e) => setForm({ ...form, footer_terms_text: e.target.value })}
+              placeholder="Write your terms & conditions here. It will appear as a page in the footer when a customer clicks the link." />
+            <p className="mt-1 text-xs text-muted-foreground">Or provide an external URL instead:</p>
+            <Input className="mt-1" value={form.footer_terms_url ?? ""}
+              onChange={(e) => setForm({ ...form, footer_terms_url: e.target.value })}
+              placeholder="https://… (optional, used only if text is empty)" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Warranty Policy</Label>
+            <Textarea rows={5} value={form.footer_warranty_text ?? ""}
+              onChange={(e) => setForm({ ...form, footer_warranty_text: e.target.value })}
+              placeholder="Write your warranty policy here. It will appear as a page in the footer when a customer clicks the link." />
+            <p className="mt-1 text-xs text-muted-foreground">Or provide an external URL instead:</p>
+            <Input className="mt-1" value={form.footer_warranty_url ?? ""}
+              onChange={(e) => setForm({ ...form, footer_warranty_url: e.target.value })}
+              placeholder="https://… (optional, used only if text is empty)" />
+          </div>
           <div><Label>Google Play URL</Label>
             <Input value={form.footer_playstore_url ?? ""} onChange={(e) => setForm({ ...form, footer_playstore_url: e.target.value })} placeholder="https://play.google.com/…" /></div>
           <div><Label>App Store URL</Label>
