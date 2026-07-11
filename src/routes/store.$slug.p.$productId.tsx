@@ -280,7 +280,7 @@ function ProductPage() {
         </DialogContent>
       </Dialog>
 
-      <WhatsAppFab phone={store.whatsapp} message={`Hi! I'm interested in ${product.title}`} />
+      <WhatsAppFab storeId={store.id} storeName={store.name} message={`Hi! I'm interested in ${product.title}`} />
     </div>
   );
 }

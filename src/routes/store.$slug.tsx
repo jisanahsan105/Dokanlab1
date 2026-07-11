@@ -507,7 +507,7 @@ function StoreHome({ slug }: { slug: string }) {
 
       <StoreFooter store={store} isDigital={isDigital} />
 
-      <WhatsAppFab phone={store.whatsapp} message={`Hi ${store.name}!`} />
+      <WhatsAppFab storeId={store.id} storeName={store.name} message={`Hi ${store.name}!`} />
     </div>
   );
 }
