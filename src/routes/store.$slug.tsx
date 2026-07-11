@@ -75,15 +75,7 @@ function StoreHome({ slug }: { slug: string }) {
     })();
   }, [slug]);
 
-  // Inject Inter font (storefront-only)
-  useEffect(() => {
-    const id = "storefront-inter";
-    if (document.getElementById(id)) return;
-    const l = document.createElement("link");
-    l.id = id; l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";
-    document.head.appendChild(l);
-  }, []);
+  // Fonts loaded globally via __root (Space Grotesk + DM Sans)
 
   const isDigital = store?.theme === "digital";
 
@@ -180,7 +172,7 @@ function StoreHome({ slug }: { slug: string }) {
       };
 
   return (
-    <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }} className="min-h-screen">
+    <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)" }} className="min-h-screen font-sans">
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 shadow-sm" style={{ background: "var(--sf-surface)", borderBottom: "1px solid var(--sf-border)" }}>
         {/* Top bar: logo + search + actions */}
