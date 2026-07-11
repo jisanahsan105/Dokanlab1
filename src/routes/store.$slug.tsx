@@ -75,15 +75,7 @@ function StoreHome({ slug }: { slug: string }) {
     })();
   }, [slug]);
 
-  // Inject Inter font (storefront-only)
-  useEffect(() => {
-    const id = "storefront-inter";
-    if (document.getElementById(id)) return;
-    const l = document.createElement("link");
-    l.id = id; l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap";
-    document.head.appendChild(l);
-  }, []);
+  // Fonts loaded globally via __root (Space Grotesk + DM Sans)
 
   const isDigital = store?.theme === "digital";
 
@@ -167,20 +159,20 @@ function StoreHome({ slug }: { slug: string }) {
         ["--sf-hero" as any]: "linear-gradient(135deg, #0B1020 0%, #1E1B4B 50%, #312E81 100%)",
       }
     : {
-        ["--sf-bg" as any]: "#F8FAFC",
+        ["--sf-bg" as any]: "#FFFFFF",
         ["--sf-surface" as any]: "#FFFFFF",
-        ["--sf-surface-2" as any]: "#F1F5F9",
+        ["--sf-surface-2" as any]: "#F0FDF4",
         ["--sf-text" as any]: "#0F172A",
         ["--sf-muted" as any]: "#64748B",
         ["--sf-border" as any]: "rgba(15,23,42,0.08)",
-        ["--sf-primary" as any]: "#059669",
-        ["--sf-primary-2" as any]: "#10B981",
-        ["--sf-accent" as any]: "#F59E0B",
-        ["--sf-hero" as any]: "linear-gradient(135deg, #064E3B 0%, #059669 60%, #10B981 100%)",
+        ["--sf-primary" as any]: "#10B981",
+        ["--sf-primary-2" as any]: "#0EA5E9",
+        ["--sf-accent" as any]: "#0EA5E9",
+        ["--sf-hero" as any]: "linear-gradient(135deg, #10B981 0%, #06B6D4 55%, #0EA5E9 100%)",
       };
 
   return (
-    <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)", fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif" }} className="min-h-screen">
+    <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)" }} className="min-h-screen font-sans">
       {/* Sticky Header */}
       <header className="sticky top-0 z-40 shadow-sm" style={{ background: "var(--sf-surface)", borderBottom: "1px solid var(--sf-border)" }}>
         {/* Top bar: logo + search + actions */}
