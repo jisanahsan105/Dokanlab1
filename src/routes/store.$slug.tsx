@@ -147,6 +147,25 @@ function StoreHome({ slug }: { slug: string }) {
     return groups;
   }, [products]);
 
+  // Update <title>, meta description, favicon from store settings.
+  // Must be declared BEFORE any early returns to keep hook order stable.
+  useEffect(() => {
+    if (typeof document === "undefined" || !store) return;
+    const title = store.meta_title?.trim() || store.name;
+    if (title) document.title = title;
+    const desc = store.meta_description?.trim() || store.tagline || store.bio;
+    if (desc) {
+      let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+      if (!m) { m = document.createElement("meta"); m.name = "description"; document.head.appendChild(m); }
+      m.content = desc;
+    }
+    if (store.favicon_url) {
+      let l = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.appendChild(l); }
+      l.href = store.favicon_url;
+    }
+  }, [store?.meta_title, store?.meta_description, store?.name, store?.tagline, store?.bio, store?.favicon_url]);
+
   if (notFound) return <div className="grid min-h-screen place-items-center text-muted-foreground">Store not found.</div>;
   if (deactivated) return (
     <div className="grid min-h-screen place-items-center px-6 text-center">
@@ -192,24 +211,6 @@ function StoreHome({ slug }: { slug: string }) {
     (themeStyle as any)["--sf-primary"] = store.brand_primary_color;
     (themeStyle as any)["--sf-hero"] = `linear-gradient(135deg, ${store.brand_primary_color} 0%, ${(themeStyle as any)["--sf-primary-2"]} 100%)`;
   }
-
-  // Update <title>, meta description, favicon from store settings
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const title = store.meta_title?.trim() || store.name;
-    if (title) document.title = title;
-    const desc = store.meta_description?.trim() || store.tagline || store.bio;
-    if (desc) {
-      let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-      if (!m) { m = document.createElement("meta"); m.name = "description"; document.head.appendChild(m); }
-      m.content = desc;
-    }
-    if (store.favicon_url) {
-      let l = document.querySelector('link[rel="icon"]') as HTMLLinkElement | null;
-      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.appendChild(l); }
-      l.href = store.favicon_url;
-    }
-  }, [store.meta_title, store.meta_description, store.name, store.tagline, store.bio, store.favicon_url]);
 
   return (
     <div style={{ ...themeStyle, background: "var(--sf-bg)", color: "var(--sf-text)" }} className="min-h-screen font-sans">
