@@ -317,6 +317,7 @@ export type Database = {
       }
       store_messages: {
         Row: {
+          conversation_id: string | null
           created_at: string
           customer_email: string | null
           customer_name: string | null
@@ -325,11 +326,13 @@ export type Database = {
           message: string
           seen: boolean
           seen_at: string | null
+          sender: string
           source: string
           store_id: string | null
           user_id: string | null
         }
         Insert: {
+          conversation_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -338,11 +341,13 @@ export type Database = {
           message: string
           seen?: boolean
           seen_at?: string | null
+          sender?: string
           source?: string
           store_id?: string | null
           user_id?: string | null
         }
         Update: {
+          conversation_id?: string | null
           created_at?: string
           customer_email?: string | null
           customer_name?: string | null
@@ -351,6 +356,7 @@ export type Database = {
           message?: string
           seen?: boolean
           seen_at?: string | null
+          sender?: string
           source?: string
           store_id?: string | null
           user_id?: string | null
@@ -649,6 +655,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      chat_customer_mark_seen: {
+        Args: { _conv_id: string; _store_id: string }
+        Returns: undefined
+      }
+      chat_customer_send: {
+        Args: {
+          _conv_id: string
+          _email: string
+          _message: string
+          _name: string
+          _phone: string
+          _store_id: string
+        }
+        Returns: string
+      }
+      chat_get_conversation: {
+        Args: { _conv_id: string; _store_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          message: string
+          seen: boolean
+          seen_at: string
+          sender: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
