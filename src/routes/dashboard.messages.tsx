@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyStore } from "@/lib/use-my-store";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCheck, Mail, MessageCircle, Phone, Search, Trash2 } from "lucide-react";
+import { CheckCheck, Check, Mail, MessageCircle, Phone, Search, Send, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/messages")({ component: MessagesPage });
 
@@ -15,6 +15,8 @@ type StoreMessage = {
   id: string;
   store_id: string | null;
   user_id: string | null;
+  conversation_id: string | null;
+  sender: "customer" | "owner" | "system";
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
@@ -25,15 +27,30 @@ type StoreMessage = {
   created_at: string;
 };
 
+type Conversation = {
+  key: string; // conversation_id or fallback id
+  conversationId: string | null;
+  storeId: string | null;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  lastMessage: StoreMessage;
+  messages: StoreMessage[];
+  unread: number;
+};
+
 function MessagesPage() {
   const { user } = useAuth();
   const { store } = useMyStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [messages, setMessages] = useState<StoreMessage[]>([]);
   const [storeNames, setStoreNames] = useState<Record<string, string>>({});
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const load = async (adminOverride = isAdmin) => {
     if (!user) return;
@@ -79,129 +96,220 @@ function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, store?.id, isAdmin]);
 
-  const filtered = useMemo(() => {
+  // Group messages into conversations (by conversation_id; fallback to individual id for legacy rows without one)
+  const conversations: Conversation[] = useMemo(() => {
+    const map = new Map<string, Conversation>();
+    // Iterate oldest-first so lastMessage ends up as newest
+    const sorted = [...messages].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    for (const m of sorted) {
+      const key = m.conversation_id ?? `single:${m.id}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.messages.push(m);
+        existing.lastMessage = m;
+        if (m.sender === "customer" && !m.seen) existing.unread += 1;
+        // Prefer non-null identity fields
+        existing.customerName ||= m.customer_name;
+        existing.customerPhone ||= m.customer_phone;
+        existing.customerEmail ||= m.customer_email;
+      } else {
+        map.set(key, {
+          key,
+          conversationId: m.conversation_id,
+          storeId: m.store_id,
+          customerName: m.customer_name,
+          customerPhone: m.customer_phone,
+          customerEmail: m.customer_email,
+          lastMessage: m,
+          messages: [m],
+          unread: m.sender === "customer" && !m.seen ? 1 : 0,
+        });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.lastMessage.created_at.localeCompare(a.lastMessage.created_at));
+  }, [messages]);
+
+  const filteredConvs = useMemo(() => {
     const s = query.trim().toLowerCase();
-    if (!s) return messages;
-    return messages.filter((m) => [m.customer_name, m.customer_phone, m.customer_email, m.message, m.store_id ? storeNames[m.store_id] : null]
-      .filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
-  }, [messages, query, storeNames]);
+    if (!s) return conversations;
+    return conversations.filter(c => [c.customerName, c.customerPhone, c.customerEmail, c.lastMessage.message, c.storeId ? storeNames[c.storeId] : null]
+      .filter(Boolean).some(v => String(v).toLowerCase().includes(s)));
+  }, [conversations, query, storeNames]);
 
-  const active = filtered.find((m) => m.id === activeId) ?? filtered[0] ?? null;
-  const unread = messages.filter((m) => !m.seen).length;
+  const active = filteredConvs.find(c => c.key === activeKey) ?? filteredConvs[0] ?? null;
+  const unreadTotal = messages.filter(m => m.sender === "customer" && !m.seen).length;
 
+  // Auto-scroll chat panel to bottom when active conversation changes / new messages arrive
   useEffect(() => {
-    if (!active || active.seen) return;
-    const id = active.id;
-    const timer = window.setTimeout(async () => {
-      const { error } = await supabase.from("store_messages").update({ seen: true }).eq("id", id);
-      if (!error) setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, seen: true, seen_at: new Date().toISOString() } : m)));
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [active?.id, active?.seen]);
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [active?.key, active?.messages.length]);
 
-  const markAllSeen = async () => {
-    const ids = messages.filter((m) => !m.seen).map((m) => m.id);
-    if (!ids.length) return;
-    const { error } = await supabase.from("store_messages").update({ seen: true }).in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success("All messages marked as seen");
-    setMessages((prev) => prev.map((m) => ({ ...m, seen: true, seen_at: m.seen_at ?? new Date().toISOString() })));
+  // Mark customer messages as seen when the owner opens the conversation
+  useEffect(() => {
+    if (!active) return;
+    const unseenIds = active.messages.filter(m => m.sender === "customer" && !m.seen).map(m => m.id);
+    if (unseenIds.length === 0) return;
+    (async () => {
+      const { error } = await supabase.from("store_messages").update({ seen: true }).in("id", unseenIds);
+      if (!error) {
+        setMessages(prev => prev.map(m => unseenIds.includes(m.id) ? { ...m, seen: true, seen_at: new Date().toISOString() } : m));
+      }
+    })();
+  }, [active?.key, active?.messages.length]);
+
+  const sendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!active || !draft.trim() || sending) return;
+    if (!active.conversationId) return toast.error("Legacy message — customer must start a new chat to receive replies.");
+    const targetStore = active.storeId ?? store?.id ?? null;
+    if (!targetStore) return toast.error("No store selected");
+    setSending(true);
+    const body = draft.trim();
+    setDraft("");
+    const { error } = await supabase.from("store_messages").insert({
+      store_id: targetStore,
+      conversation_id: active.conversationId,
+      sender: "owner",
+      customer_name: active.customerName,
+      customer_phone: active.customerPhone,
+      customer_email: active.customerEmail,
+      message: body,
+      source: "dashboard",
+      seen: false,
+    });
+    setSending(false);
+    if (error) { setDraft(body); return toast.error(error.message); }
+    load();
   };
 
-  const deleteMessage = async (id: string) => {
-    if (!confirm("Delete this message?")) return;
-    const { error } = await supabase.from("store_messages").delete().eq("id", id);
+  const deleteConversation = async () => {
+    if (!active) return;
+    if (!confirm("Delete this whole conversation?")) return;
+    const ids = active.messages.map(m => m.id);
+    const { error } = await supabase.from("store_messages").delete().in("id", ids);
     if (error) return toast.error(error.message);
-    toast.success("Message deleted");
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+    toast.success("Conversation deleted");
+    setMessages(prev => prev.filter(m => !ids.includes(m.id)));
+    setActiveKey(null);
   };
 
   if (loading) return <div className="text-muted-foreground">Loading…</div>;
 
+  const lastOwnerSeenId = (() => {
+    if (!active) return null;
+    for (let i = active.messages.length - 1; i >= 0; i--) {
+      if (active.messages[i].sender === "owner") return active.messages[i].seen ? active.messages[i].id : null;
+    }
+    return null;
+  })();
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Messages</h1>
-          <p className="text-sm text-muted-foreground">Customer messages from storefront chat.</p>
-        </div>
-        <Button variant="outline" onClick={markAllSeen} disabled={unread === 0}>
-          <CheckCheck className="mr-2 h-4 w-4" /> Mark all seen
-        </Button>
+    <div className="space-y-4">
+      <div>
+        <h1 className="font-display text-2xl font-bold">Messages</h1>
+        <p className="text-sm text-muted-foreground">Live two-way chat with your storefront customers. {unreadTotal > 0 && <span className="font-semibold text-primary">{unreadTotal} unread</span>}</p>
       </div>
 
-      <div className="grid min-h-[620px] overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[360px_1fr]">
-        <aside className="border-b border-border lg:border-b-0 lg:border-r">
+      <div className="grid h-[70vh] min-h-[560px] overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-[340px_1fr]">
+        <aside className="flex min-h-0 flex-col border-b border-border lg:border-b-0 lg:border-r">
           <div className="flex items-center gap-2 border-b border-border p-3">
             <Search className="h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search messages…" value={query} onChange={(e) => setQuery(e.target.value)} className="border-0 focus-visible:ring-0" />
+            <Input placeholder="Search conversations…" value={query} onChange={(e) => setQuery(e.target.value)} className="border-0 focus-visible:ring-0" />
           </div>
-          <div className="max-h-[560px] overflow-auto">
-            {filtered.map((m) => (
-              <button key={m.id} type="button" onClick={() => setActiveId(m.id)}
-                className={`block w-full border-b border-border p-4 text-left transition hover:bg-accent ${active?.id === m.id ? "bg-accent" : ""}`}>
+          <div className="flex-1 overflow-y-auto">
+            {filteredConvs.map((c) => (
+              <button key={c.key} type="button" onClick={() => setActiveKey(c.key)}
+                className={`block w-full border-b border-border p-3 text-left transition hover:bg-accent ${active?.key === c.key ? "bg-accent" : ""}`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold">{m.customer_name || m.customer_phone || m.customer_email || "Customer"}</div>
-                    {isAdmin && <div className="truncate text-xs text-muted-foreground">{m.store_id ? (storeNames[m.store_id] ?? "Store") : "System"}</div>}
+                    <div className="truncate text-sm font-semibold">{c.customerName || c.customerPhone || c.customerEmail || "Customer"}</div>
+                    {isAdmin && c.storeId && <div className="truncate text-[11px] text-muted-foreground">{storeNames[c.storeId] ?? "Store"}</div>}
                   </div>
-                  {!m.seen && <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />}
+                  {c.unread > 0 && <span className="grid min-w-[20px] shrink-0 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">{c.unread}</span>}
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground whitespace-pre-line">{m.message}</p>
-                <div className="mt-2 text-xs text-muted-foreground">{new Date(m.created_at).toLocaleString()}</div>
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  {c.lastMessage.sender === "owner" ? "You: " : ""}{c.lastMessage.message}
+                </p>
+                <div className="mt-1 text-[10px] text-muted-foreground">{new Date(c.lastMessage.created_at).toLocaleString()}</div>
               </button>
             ))}
-            {filtered.length === 0 && <div className="p-10 text-center text-sm text-muted-foreground">No messages.</div>}
+            {filteredConvs.length === 0 && <div className="p-10 text-center text-sm text-muted-foreground">No conversations.</div>}
           </div>
         </aside>
 
-        <section className="p-6">
+        <section className="flex min-h-0 flex-col">
           {!active ? (
             <div className="grid h-full place-items-center text-center text-muted-foreground">
-              <div><MessageCircle className="mx-auto h-10 w-10" /><p className="mt-2 text-sm">No message selected.</p></div>
+              <div><MessageCircle className="mx-auto h-10 w-10" /><p className="mt-2 text-sm">Select a conversation.</p></div>
             </div>
           ) : (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
-                <div>
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold">{active.customer_name || "Customer message"}</h2>
-                    {active.seen ? <Badge variant="secondary">Seen</Badge> : <Badge>New</Badge>}
+                    <h2 className="truncate text-base font-bold">{active.customerName || "Customer"}</h2>
+                    {isAdmin && active.storeId && <Badge variant="secondary" className="text-[10px]">{storeNames[active.storeId] ?? "Store"}</Badge>}
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{new Date(active.created_at).toLocaleString()}</p>
-                  {isAdmin && active.store_id && <p className="text-sm text-muted-foreground">Store: {storeNames[active.store_id] ?? active.store_id}</p>}
+                  <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                    {active.customerPhone && <a href={`tel:${active.customerPhone}`} className="inline-flex items-center gap-1 hover:text-foreground"><Phone className="h-3 w-3" /> {active.customerPhone}</a>}
+                    {active.customerEmail && <a href={`mailto:${active.customerEmail}`} className="inline-flex items-center gap-1 hover:text-foreground"><Mail className="h-3 w-3" /> {active.customerEmail}</a>}
+                  </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => deleteMessage(active.id)}>
+                <Button variant="outline" size="sm" onClick={deleteConversation}>
                   <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </Button>
               </div>
 
-              <div className="grid gap-3 text-sm sm:grid-cols-2">
-                {active.customer_phone && <a href={`tel:${active.customer_phone}`} className="flex items-center gap-2 rounded-lg border border-border p-3 hover:bg-accent"><Phone className="h-4 w-4 text-primary" /> {active.customer_phone}</a>}
-                {active.customer_email && <a href={`mailto:${active.customer_email}`} className="flex items-center gap-2 rounded-lg border border-border p-3 hover:bg-accent"><Mail className="h-4 w-4 text-primary" /> {active.customer_email}</a>}
+              <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto bg-muted/20 px-4 py-4">
+                {active.messages.map(m => {
+                  const mine = m.sender === "owner";
+                  const sys = m.sender === "system";
+                  if (sys) {
+                    return (
+                      <div key={m.id} className="mx-auto max-w-[85%] rounded-lg bg-amber-100 px-3 py-2 text-center text-[11px] text-amber-900">
+                        {m.message}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className="max-w-[70%]">
+                        <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card text-foreground rounded-bl-sm border border-border"}`}>
+                          {m.message}
+                        </div>
+                        <div className={`mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "justify-end" : "justify-start"}`}>
+                          <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                          {mine && m.id === lastOwnerSeenId && (
+                            <span className="inline-flex items-center gap-0.5 font-medium text-primary">
+                              <CheckCheck className="h-3 w-3" /> Seen
+                            </span>
+                          )}
+                          {mine && m.id !== lastOwnerSeenId && <Check className="h-3 w-3" />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="rounded-xl border border-border bg-muted/20 p-5 whitespace-pre-line leading-relaxed">
-                <MessageBody text={active.message} />
-              </div>
-            </div>
+              <form onSubmit={sendReply} className="flex items-end gap-2 border-t border-border p-3">
+                <textarea
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(e as any); } }}
+                  rows={1}
+                  placeholder={active.conversationId ? "Type your reply…" : "Legacy message — cannot reply."}
+                  disabled={!active.conversationId}
+                  className="max-h-32 min-h-[40px] flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-60"
+                />
+                <Button type="submit" size="icon" disabled={sending || !draft.trim() || !active.conversationId} className="h-10 w-10 shrink-0">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </>
           )}
         </section>
       </div>
     </div>
-  );
-}
-
-function MessageBody({ text }: { text: string }) {
-  // Auto-linkify URLs
-  const parts = text.split(/(https?:\/\/[^\s]+)/g);
-  return (
-    <>
-      {parts.map((p, i) =>
-        /^https?:\/\//.test(p)
-          ? <a key={i} href={p} target="_blank" rel="noreferrer" className="text-primary underline break-all">{p}</a>
-          : <span key={i}>{p}</span>,
-      )}
-    </>
   );
 }

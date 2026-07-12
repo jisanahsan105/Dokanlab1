@@ -522,7 +522,7 @@ function StoreHome({ slug }: { slug: string }) {
 
       <StoreFooter store={store} isDigital={isDigital} />
 
-      <WhatsAppFab storeId={store.id} storeName={store.name} message={`Hi ${store.name}!`} />
+      <WhatsAppFab storeId={store.id} storeName={store.name} slug={store.slug} brandColor={store.brand_primary_color ?? undefined} />
     </div>
   );
 }
