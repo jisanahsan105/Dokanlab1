@@ -96,16 +96,6 @@ function MessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, store?.id, isAdmin]);
 
-  const filtered = useMemo(() => {
-    const s = query.trim().toLowerCase();
-    if (!s) return messages;
-    return messages.filter((m) => [m.customer_name, m.customer_phone, m.customer_email, m.message, m.store_id ? storeNames[m.store_id] : null]
-      .filter(Boolean).some((v) => String(v).toLowerCase().includes(s)));
-  }, [messages, query, storeNames]);
-
-  const active = filtered.find((m) => m.id === activeId) ?? filtered[0] ?? null;
-  const unread = messages.filter((m) => !m.seen).length;
-
   // Group messages into conversations (by conversation_id; fallback to individual id for legacy rows without one)
   const conversations: Conversation[] = useMemo(() => {
     const map = new Map<string, Conversation>();
