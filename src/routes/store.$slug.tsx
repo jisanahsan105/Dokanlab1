@@ -683,13 +683,24 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
   const [openPage, setOpenPage] = useState<null | { title: string; body: string }>(null);
 
   type FooterLink = { label: string; href?: string; text?: string };
+  const policySections: Array<{ title: string; text?: string; href?: string }> = [
+    { title: "Terms & Conditions", text: store.footer_terms_text, href: store.footer_terms_url },
+    { title: "Warranty Policy", text: store.footer_warranty_text, href: store.footer_warranty_url },
+    { title: "Return & Refund Policy", text: store.footer_return_text, href: store.footer_return_url },
+    { title: "Privacy Policy", text: store.footer_privacy_text, href: store.footer_privacy_url },
+  ].filter(p => (p.text && p.text.trim()) || p.href);
+  const combinedPoliciesBody = policySections
+    .filter(p => p.text && p.text.trim())
+    .map(p => `━━ ${p.title} ━━\n\n${p.text!.trim()}`)
+    .join("\n\n\n");
+  const externalPolicyLinks = policySections.filter(p => !(p.text && p.text.trim()) && p.href);
   const links: FooterLink[] = [
     { label: "About Us", href: store.footer_about_url },
     { label: "Facebook Page", href: store.footer_facebook_url },
-    { label: "Terms & Condition", href: store.footer_terms_url, text: store.footer_terms_text },
-    { label: "Warranty Policy", href: store.footer_warranty_url, text: store.footer_warranty_text },
-    { label: "Return & Refund", href: store.footer_return_url, text: store.footer_return_text },
-    { label: "Privacy Policy", href: store.footer_privacy_url, text: store.footer_privacy_text },
+    ...(combinedPoliciesBody
+      ? [{ label: "Policies", text: combinedPoliciesBody } as FooterLink]
+      : []),
+    ...externalPolicyLinks.map(p => ({ label: p.title, href: p.href })),
   ].filter(l => (l.text && l.text.trim()) || l.href);
 
   const socials: Array<{ href?: string; label: string; Icon: any }> = [
