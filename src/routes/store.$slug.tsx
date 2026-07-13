@@ -700,7 +700,7 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
     ...(combinedPoliciesBody
       ? [{ label: "Policies", text: combinedPoliciesBody } as FooterLink]
       : []),
-    ...externalPolicyLinks.map(p => ({ label: p.title, href: p.href })),
+    ...externalPolicyLinks.map(p => ({ label: p.title, href: p.href } as FooterLink)),
   ].filter(l => (l.text && l.text.trim()) || l.href);
 
   const socials: Array<{ href?: string; label: string; Icon: any }> = [
