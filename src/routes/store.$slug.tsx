@@ -694,14 +694,14 @@ function StoreFooter({ store, isDigital }: { store: any; isDigital: boolean }) {
     .map(p => `━━ ${p.title} ━━\n\n${p.text!.trim()}`)
     .join("\n\n\n");
   const externalPolicyLinks = policySections.filter(p => !(p.text && p.text.trim()) && p.href);
-  const links: FooterLink[] = [
-    { label: "About Us", href: store.footer_about_url },
-    { label: "Facebook Page", href: store.footer_facebook_url },
+  const links: FooterLink[] = ([
+    { label: "About Us", href: store.footer_about_url } as FooterLink,
+    { label: "Facebook Page", href: store.footer_facebook_url } as FooterLink,
     ...(combinedPoliciesBody
       ? [{ label: "Policies", text: combinedPoliciesBody } as FooterLink]
       : []),
     ...externalPolicyLinks.map(p => ({ label: p.title, href: p.href } as FooterLink)),
-  ].filter(l => (l.text && l.text.trim()) || l.href);
+  ] as FooterLink[]).filter(l => (l.text && l.text.trim()) || l.href);
 
   const socials: Array<{ href?: string; label: string; Icon: any }> = [
     { href: store.footer_facebook_url, label: "Facebook", Icon: Facebook },
