@@ -334,10 +334,26 @@ function SettingsPage() {
               onChange={(e) => setForm({ ...form, footer_warranty_url: e.target.value })}
               placeholder="https://… (optional, used only if text is empty)" />
           </div>
-          <div><Label>Google Play URL</Label>
-            <Input value={form.footer_playstore_url ?? ""} onChange={(e) => setForm({ ...form, footer_playstore_url: e.target.value })} placeholder="https://play.google.com/…" /></div>
-          <div><Label>App Store URL</Label>
-            <Input value={form.footer_appstore_url ?? ""} onChange={(e) => setForm({ ...form, footer_appstore_url: e.target.value })} placeholder="https://apps.apple.com/…" /></div>
+          <div className="sm:col-span-2">
+            <Label>Return & Refund Policy</Label>
+            <Textarea rows={5} value={form.footer_return_text ?? ""}
+              onChange={(e) => setForm({ ...form, footer_return_text: e.target.value })}
+              placeholder="Write your return & refund policy here." />
+            <p className="mt-1 text-xs text-muted-foreground">Or provide an external URL instead:</p>
+            <Input className="mt-1" value={form.footer_return_url ?? ""}
+              onChange={(e) => setForm({ ...form, footer_return_url: e.target.value })}
+              placeholder="https://… (optional, used only if text is empty)" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Privacy Policy</Label>
+            <Textarea rows={5} value={form.footer_privacy_text ?? ""}
+              onChange={(e) => setForm({ ...form, footer_privacy_text: e.target.value })}
+              placeholder="Write your privacy policy here." />
+            <p className="mt-1 text-xs text-muted-foreground">Or provide an external URL instead:</p>
+            <Input className="mt-1" value={form.footer_privacy_url ?? ""}
+              onChange={(e) => setForm({ ...form, footer_privacy_url: e.target.value })}
+              placeholder="https://… (optional, used only if text is empty)" />
+          </div>
           <div className="sm:col-span-2"><Label>Copyright line</Label>
             <Input value={form.footer_copyright ?? ""} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} placeholder={`${form.name ?? "Your Store"} © All rights reserved.`} /></div>
         </div>
