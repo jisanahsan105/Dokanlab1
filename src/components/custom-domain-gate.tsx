@@ -6,6 +6,8 @@ const LOVABLE_HOSTS = [
   "lovable.app",
   "lovableproject.com",
   "vercel.app",
+  "websitemaker.store",
+  "www.websitemaker.store",
   "localhost",
   "127.0.0.1",
 ];
