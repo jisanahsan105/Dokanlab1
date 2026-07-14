@@ -6,7 +6,7 @@ type DohResp = { Status: number; Answer?: DohAnswer[] };
 type CheckStatus = "success" | "warning" | "error";
 type DomainCheck = {
   key: string;
-  type: "TXT" | "A" | "HTTPS" | "DOMAIN";
+  type: "TXT" | "A" | "CNAME" | "HTTPS" | "DOMAIN";
   host: string;
   expected: string;
   found: string;
@@ -18,15 +18,44 @@ type DomainCheck = {
 const VERCEL_IP = "76.76.21.21";
 const VERCEL_CNAME = "cname.vercel-dns.com";
 
-function normalizeDomain(value: string) {
-  return value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
+function isSubdomain(domain: string): boolean {
+  const parts = domain.split(".");
+
+  if (parts.length <= 2) return false;
+
+  const commonSecondLevel = ["co", "com", "org", "net", "gov", "edu"];
+  const tld = parts[parts.length - 1];
+  const second = parts[parts.length - 2];
+
+  if (commonSecondLevel.includes(second) && tld.length === 2) {
+    return false;
+  }
+
+  return true;
 }
 
+function getDnsRecordsToCheck(domain: string) {
+  return {
+    root: domain,
+    www: isSubdomain(domain) ? null : `www.${domain}`,
+  };
+}
+
+function normalizeDomain(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "")
+    .replace(/^www\./, "");
+}
 
 async function doh(name: string, type: "A" | "TXT"): Promise<DohAnswer[]> {
   const r = await fetch(
-    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`,
-    { headers: { Accept: "application/dns-json" } },
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(
+      name
+    )}&type=${type}`,
+    { headers: { Accept: "application/dns-json" }, cache: "no-store" }
   );
   if (!r.ok) return [];
   const j = (await r.json()) as DohResp;
@@ -36,16 +65,17 @@ async function doh(name: string, type: "A" | "TXT"): Promise<DohAnswer[]> {
 // 👇 এইখানে বসবে
 async function dohCname(name: string): Promise<DohAnswer[]> {
   const r = await fetch(
-    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=CNAME`,
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(
+      name
+    )}&type=CNAME`,
     {
       headers: {
         Accept: "application/dns-json",
       },
+      cache: "no-store",
     }
   );
-
   if (!r.ok) return [];
-
   const j = (await r.json()) as DohResp;
   return j.Answer ?? [];
 }
@@ -57,6 +87,7 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
     const domain = normalizeDomain(data.domain);
     const checkedAt = new Date().toISOString();
     const checks: DomainCheck[] = [];
+
     if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain)) {
       checks.push({
         key: "domain-format",
@@ -79,6 +110,7 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       .eq("owner_id", context.userId)
       .eq("custom_domain", domain)
       .maybeSingle();
+
     if (ownErr || !owned) {
       return {
         ok: false,
@@ -97,10 +129,13 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
         ],
       } as const;
     }
-    const storedToken = (owned as any)?.store_domain_verifications?.token
-      ?? (Array.isArray((owned as any)?.store_domain_verifications)
+
+    const storedToken =
+      (owned as any)?.store_domain_verifications?.token ??
+      (Array.isArray((owned as any)?.store_domain_verifications)
         ? (owned as any).store_domain_verifications[0]?.token
         : null);
+
     if (!storedToken || storedToken !== data.token) {
       return {
         ok: false,
@@ -131,49 +166,114 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       expected: data.token,
       found: txtValues.join(", ") || "none",
       status: tokenFound ? "success" : "error",
-      message: tokenFound ? "TXT ownership record found" : "TXT ownership record is missing or does not match",
+      message: tokenFound
+        ? "TXT ownership record found"
+        : "TXT ownership record is missing or does not match",
       checkedAt,
     });
 
-    // Apex domains must have both apex and www pointed correctly so either URL works.
-    const targets = requiredARecordHosts(domain);
+    const records = getDnsRecordsToCheck(domain);
     const aErrors: string[] = [];
-    for (const t of targets) {
-      const a = await doh(t, "A");
-      const seen = a.map((r) => r.data);
-      if (!seen.includes(LOVABLE_IP)) {
-        aErrors.push(`A record for ${t} must point to ${LOVABLE_IP}. Current: ${seen.join(", ") || "none"}`);
-      }
+
+    // Root A Record
+    const apex = await doh(records.root, "A");
+    const apexIPs = apex.map((r) => r.data);
+
+    const rootOk = apexIPs.includes(VERCEL_IP);
+
+    checks.push({
+      key: "a-root",
+      type: "A",
+      host: records.root,
+      expected: VERCEL_IP,
+      found: apexIPs.join(", ") || "none",
+      status: rootOk ? "success" : "error",
+      message: rootOk ? "Root A Record OK" : "Root A Record Missing",
+      checkedAt,
+    });
+
+    if (!rootOk) {
+      aErrors.push(`A record for ${records.root} must point to ${VERCEL_IP}`);
+    }
+
+    // WWW CNAME (only apex domain)
+    if (records.www) {
+      const cname = await dohCname(records.www);
+
+      const cnameTargets = cname.map((r) =>
+        r.data.replace(/\.$/, "").toLowerCase()
+      );
+
+      const cnameOk = cnameTargets.includes(VERCEL_CNAME.toLowerCase());
+
       checks.push({
-        key: `a-${t}`,
-        type: "A",
-        host: t,
-        expected: LOVABLE_IP,
-        found: seen.join(", ") || "none",
-        status: seen.includes(LOVABLE_IP) ? "success" : "error",
-        message: seen.includes(LOVABLE_IP) ? "A record points correctly" : "A record is missing or points elsewhere",
+        key: "cname-www",
+        type: "CNAME",
+        host: records.www,
+        expected: VERCEL_CNAME,
+        found: cnameTargets.join(", ") || "none",
+        status: cnameOk ? "success" : "error",
+        message: cnameOk ? "WWW CNAME OK" : "WWW CNAME Missing",
         checkedAt,
       });
+
+      if (!cnameOk) {
+        aErrors.push(
+          `CNAME for ${records.www} must point to ${VERCEL_CNAME}`
+        );
+      }
     }
-    const apexARecordIsMissing = aErrors.some((message) => message.startsWith(`A record for ${domain} `));
-    if (apexARecordIsMissing) return { ok: false, error: aErrors.join(" "), checks } as const;
+
+    if (aErrors.length) {
+      return {
+        ok: false,
+        error: aErrors.join(" "),
+        checks,
+      } as const;
+    }
 
     // DNS can be correct before the hosting edge attaches the domain; keep HTTPS as an informational check.
     let siteStatus: "live" | "setting_up" | "dns_only" = "dns_only";
     let siteMessage = "DNS verified — site is being set up";
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     try {
-      const r = await fetch(`https://${domain}`, { method: "GET", redirect: "manual" });
+      const r = await fetch(`https://${domain}`, {
+        method: "GET",
+        redirect: "manual",
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+
       const httpsOk = r.status >= 200 && r.status < 400;
       let body = "";
-      try { body = (await r.text()).slice(0, 4000); } catch { /* ignore */ }
+      try {
+        body = (await r.text()).slice(0, 4000);
+      } catch {
+        /* ignore */
+      }
       const cfMatch = body.match(/Error\s*(10\d{2}|5\d{2})/i);
       const cfCode = cfMatch?.[1];
-      if (httpsOk && !cfCode) {
+      const isVercelError =
+        body.includes("DEPLOYMENT_NOT_FOUND") ||
+        body.includes("DOMAIN_NOT_CONFIGURED") ||
+        body.includes("Configuration Error");
+
+      if (httpsOk && !cfCode && !isVercelError) {
         siteStatus = "live";
         siteMessage = "Site opens successfully over HTTPS";
+      } else if (isVercelError) {
+        siteStatus = "setting_up";
+        siteMessage =
+          "DNS verified — Vercel is configuring your domain. This usually takes a few minutes.";
       } else if (cfCode === "1001" || /DNS resolution error/i.test(body)) {
         siteStatus = "setting_up";
-        siteMessage = "DNS verified — Cloudflare is still resolving the host (Error 1001). This usually clears within a few minutes.";
+        siteMessage =
+          "DNS verified — Cloudflare is still resolving the host (Error 1001). This usually clears within a few minutes.";
       } else if (cfCode && /^5\d{2}$/.test(cfCode)) {
         siteStatus = "setting_up";
         siteMessage = `DNS verified — hosting edge returned Cloudflare Error ${cfCode}. Site is being set up.`;
@@ -186,14 +286,25 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
         type: "HTTPS",
         host: domain,
         expected: "HTTP 200-399",
-        found: cfCode ? `HTTP ${r.status} • Cloudflare ${cfCode}` : `HTTP ${r.status}`,
+        found: cfCode
+          ? `HTTP ${r.status} • Cloudflare ${cfCode}`
+          : `HTTP ${r.status}`,
         status: siteStatus === "live" ? "success" : "warning",
         message: siteMessage,
         checkedAt,
       });
-    } catch {
-      siteStatus = "setting_up";
-      siteMessage = "DNS verified — waiting for the hosting edge to attach this domain.";
+    } catch (err) {
+  clearTimeout(timeout);
+
+  if (err instanceof Error && err.name === "AbortError") {
+    siteStatus = "setting_up";
+    siteMessage =
+      "DNS verified — the site is taking longer than expected to respond. Please wait a few minutes and try again.";
+  } else {
+    siteStatus = "setting_up";
+    siteMessage =
+      "DNS verified — waiting for the hosting edge to attach this domain.";
+  }
       checks.push({
         key: "https-live",
         type: "HTTPS",
@@ -206,8 +317,6 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       });
     }
 
-    const missingRequiredRecords = aErrors.filter((message) => message.startsWith(`A record for ${domain} `));
-    if (missingRequiredRecords.length) return { ok: false, error: missingRequiredRecords.join(" "), checks } as const;
     if (!tokenFound) {
       return {
         ok: false,
