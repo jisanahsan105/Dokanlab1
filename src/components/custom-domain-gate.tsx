@@ -28,11 +28,15 @@ export function CustomDomainGate({ children }: { children: ReactNode }) {
 
     const host = window.location.hostname.toLowerCase();
 
-    // Allow Lovable, Vercel, localhost
-    if (isPlatformHost(host)) {
-      setChecked(true);
-      return;
-    }
+   // Allow platform domains (don't treat them as customer stores)
+if (
+  host === "websitemaker.store" ||
+  host === "www.websitemaker.store" ||
+  isPlatformHost(host)
+) {
+  setChecked(true);
+  return;
+}
 
     // Force HTTPS on custom domains
     if (
