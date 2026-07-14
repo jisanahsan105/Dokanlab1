@@ -162,6 +162,7 @@ console.log("SUPABASE:", { owned, ownErr });
     const txt = await doh(`_lovable-verify.${domain}`, "TXT");
     const txtValues = txt.map((a) => a.data.replace(/"/g, "").trim());
     const tokenFound = txtValues.includes(data.token);
+    console.log("TXT:", txtValues);
     checks.push({
       key: "txt-ownership",
       type: "TXT",
@@ -180,6 +181,7 @@ console.log("SUPABASE:", { owned, ownErr });
 
     // Root A Record
     const apex = await doh(records.root, "A");
+    console.log("A RECORD:", apexIPs);
     const apexIPs = apex.map((r) => r.data);
 
     const rootOk = apexIPs.includes(VERCEL_IP);
@@ -249,6 +251,8 @@ console.log("SUPABASE:", { owned, ownErr });
         cache: "no-store",
         signal: controller.signal,
       });
+
+      console.log("A RECORD:", apexIPs);
 
       clearTimeout(timeout);
 
