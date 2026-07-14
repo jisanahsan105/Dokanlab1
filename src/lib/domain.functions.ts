@@ -327,4 +327,14 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
     }
 
     return { ok: true, canonicalDomain: domain, checks, siteStatus, siteMessage } as const;
+  } catch (err) {
+    console.error("verifyDomainDns ERROR:", err);
+
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : String(err),
+      checks: [],
+    } as const;
+  }
+});
   });
