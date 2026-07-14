@@ -531,7 +531,7 @@ function SettingsPage() {
           <Label className="text-base">Custom Domain</Label>
         </div>
         <p className="text-sm text-muted-foreground">
-          Connect your own domain (e.g. <span className="font-mono">shop.example.com</span>). Add the DNS records shown after you save, then click Verify. SSL is set up automatically once verified.
+          Connect your own domain (e.g. <span className="font-mono">shop.example.com</span>). Add the DNS records shown after you save, then click Verify. SSL is handled automatically by Vercel after your domain is connected.
         </p>
 
         {!form.custom_domain ? (
@@ -566,10 +566,21 @@ function SettingsPage() {
             {/* DNS record instructions */}
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Add these records at your DNS provider</p>
-              <DnsRow type="A" host="@" value="185.158.133.1" onCopy={copy} />
-              <DnsRow type="A" host="www" value="185.158.133.1" onCopy={copy} />
+              <DnsRow
+  type="A"
+  host="@"
+  value="76.76.21.21"
+  onCopy={copy}
+/>
+
+<DnsRow
+  type="CNAME"
+  host="www"
+  value="cname.vercel-dns.com"
+  onCopy={copy}
+/>
               <DnsRow type="TXT" host={`_lovable-verify.${form.custom_domain}`} value={domainToken ?? ""} onCopy={copy} />
-              <p className="text-xs text-muted-foreground">DNS changes can take a few minutes to a few hours to propagate.</p>
+              <p className="text-xs text-muted-foreground">DNS propagation usually takes 5–30 minutes. Vercel will automatically issue an SSL certificate.</p>
             </div>
 
             {form.domain_verified && (
