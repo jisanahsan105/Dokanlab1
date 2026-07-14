@@ -22,10 +22,6 @@ function normalizeDomain(value: string) {
   return value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
 }
 
-function requiredARecordHosts(domain: string) {
-  const labels = domain.split(".").filter(Boolean);
-  return labels.length === 2 ? [domain, `www.${domain}`] : [domain];
-}
 
 async function doh(name: string, type: "A" | "TXT"): Promise<DohAnswer[]> {
   const r = await fetch(
@@ -53,9 +49,6 @@ async function dohCname(name: string): Promise<DohAnswer[]> {
   const j = (await r.json()) as DohResp;
   return j.Answer ?? [];
 }
-
-export const verifyDomainDns = createServerFn({ method: "POST" })
-
 
 export const verifyDomainDns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
