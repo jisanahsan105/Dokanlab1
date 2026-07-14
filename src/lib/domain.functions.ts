@@ -337,4 +337,3 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
     } as const;
   }
 });
-  });
