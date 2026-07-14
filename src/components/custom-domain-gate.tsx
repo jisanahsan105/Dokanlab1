@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+  import { useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
