@@ -84,6 +84,7 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { domain: string; token: string }) => d)
   .handler(async ({ data, context }) => {
+  try {
     const domain = normalizeDomain(data.domain);
     const checkedAt = new Date().toISOString();
     const checks: DomainCheck[] = [];
