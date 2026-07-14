@@ -15,7 +15,8 @@ type DomainCheck = {
   checkedAt: string;
 };
 
-const LOVABLE_IP = "185.158.133.1";
+const VERCEL_IP = "76.76.21.21";
+const VERCEL_CNAME = "cname.vercel-dns.com";
 
 function normalizeDomain(value: string) {
   return value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
@@ -35,6 +36,26 @@ async function doh(name: string, type: "A" | "TXT"): Promise<DohAnswer[]> {
   const j = (await r.json()) as DohResp;
   return j.Answer ?? [];
 }
+
+// 👇 এইখানে বসবে
+async function dohCname(name: string): Promise<DohAnswer[]> {
+  const r = await fetch(
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=CNAME`,
+    {
+      headers: {
+        Accept: "application/dns-json",
+      },
+    }
+  );
+
+  if (!r.ok) return [];
+
+  const j = (await r.json()) as DohResp;
+  return j.Answer ?? [];
+}
+
+export const verifyDomainDns = createServerFn({ method: "POST" })
+
 
 export const verifyDomainDns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
