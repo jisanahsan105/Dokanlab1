@@ -111,7 +111,9 @@ export const verifyDomainDns = createServerFn({ method: "POST" })
       .eq("owner_id", context.userId)
       .eq("custom_domain", domain)
       .maybeSingle();
-
+    
+console.log("SUPABASE:", { owned, ownErr });
+    
     if (ownErr || !owned) {
       return {
         ok: false,
