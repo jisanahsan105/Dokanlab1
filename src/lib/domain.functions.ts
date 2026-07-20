@@ -361,6 +361,7 @@ const addDomainRes = await fetch(
 
 const addDomainBody = await addDomainRes.json();
 
+console.log("STATUS:", addDomainRes.status);
 console.log("VERCEL ADD DOMAIN:", addDomainBody);
 
 if (!addDomainRes.ok && addDomainRes.status !== 409) {
