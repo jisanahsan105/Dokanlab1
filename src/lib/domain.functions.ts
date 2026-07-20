@@ -181,8 +181,9 @@ console.log("SUPABASE:", { owned, ownErr });
 
     // Root A Record
     const apex = await doh(records.root, "A");
-    console.log("A RECORD:", apexIPs);
-    const apexIPs = apex.map((r) => r.data);
+const apexIPs = apex.map((r) => r.data);
+
+console.log("A RECORD:", apexIPs);
 
     const rootOk = apexIPs.includes(VERCEL_IP);
 
