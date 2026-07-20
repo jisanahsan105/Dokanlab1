@@ -330,7 +330,73 @@ console.log("A RECORD:", apexIPs);
         checks,
       } as const;
     }
+// ===============================
+// Add domain to Vercel project
+// ===============================
 
+const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID!;
+const VERCEL_API_TOKEN = process.env.VERCEL_API_TOKEN!;
+
+if (!VERCEL_PROJECT_ID || !VERCEL_API_TOKEN) {
+  return {
+    ok: false,
+    error: "Missing Vercel environment variables.",
+    checks,
+  } as const;
+}
+
+const addDomainRes = await fetch(
+  `https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${VERCEL_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: domain,
+    }),
+  }
+);
+
+const addDomainBody = await addDomainRes.json();
+
+console.log("VERCEL ADD DOMAIN:", addDomainBody);
+
+if (!addDomainRes.ok && addDomainRes.status !== 409) {
+  return {
+    ok: false,
+    error:
+      addDomainBody.error?.message ||
+      addDomainBody.message ||
+      "Failed to add domain to Vercel.",
+    checks,
+  } as const;
+}
+
+// ===============================
+// Trigger domain verification
+// ===============================
+
+const verifyRes = await fetch(
+  `https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${domain}/verify`,
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${VERCEL_API_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+  }
+);
+
+const verifyBody = await verifyRes.json();
+
+console.log("VERCEL VERIFY:", verifyBody);
+
+// Ignore if already verified
+if (!verifyRes.ok && verifyRes.status !== 409) {
+  console.warn("Vercel verify warning:", verifyBody);
+}
     return { ok: true, canonicalDomain: domain, checks, siteStatus, siteMessage } as const;
   } catch (err) {
     console.error("verifyDomainDns ERROR:", err);
