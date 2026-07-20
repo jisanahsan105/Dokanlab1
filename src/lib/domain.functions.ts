@@ -253,8 +253,6 @@ console.log("A RECORD:", apexIPs);
         signal: controller.signal,
       });
 
-      console.log("A RECORD:", apexIPs);
-
       clearTimeout(timeout);
 
       const httpsOk = r.status >= 200 && r.status < 400;
